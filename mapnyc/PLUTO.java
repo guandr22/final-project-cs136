@@ -4,7 +4,7 @@ import java.util.*;
 import java.io.*; 
 
 public class PLUTO{
-	public ArrayList<TaxPlot> taxplots;
+	public ArrayList<TaxPlot> taxplots; //temporary data structre, to be replaced with the quadtree
 	public Hashtable<String, TaxPlot> symbolTable; // address ---> taxplot
 
 	public PLUTO(String filename){
@@ -19,7 +19,6 @@ public class PLUTO{
         		String line = scanner.nextLine();
         		TaxPlot nextTaxplot = new TaxPlot(line);
         		taxplots.add(nextTaxplot);
-        		//System.out.println(line);
         		
         	}
         } catch (FileNotFoundException e) {
@@ -43,19 +42,16 @@ public class PLUTO{
 	}
 
 	//What’s the [oldest/tallest/most spacious/highest land value/highest total value] building within X miles of me?
-	public TaxPlot most(double maxDistance);
+	public TaxPlot most(double maxDistance){
+		return null;
+	}
 
 	//What’s the average [age/height/square footage/land value/total value] of a building within X miles of me? 
 
 	public static void main(String[] args){
-		PLUTO map = new PLUTO("toy.csv");
-		/*for (TaxPlot taxplot: map.taxplots){
-			System.out.println(taxplot.toString());
-		}*/
+		PLUTO map = new PLUTO("mapnyc/toy.csv");
+
 		System.out.println(map.getOwner("406 EAST 189 STREET"));
 	}
 }
 
-private class Attribute{
-
-}

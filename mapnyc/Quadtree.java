@@ -2,7 +2,7 @@ package mapnyc;
 
 import java.util.ArrayList;
 
-public class Quadtree<Item, Location> implements QuadtreeInterface<Item, Location>{
+public class Quadtree<Item> implements QuadtreeInterface<Item>{
 
 	// Instance variables
 	private int numNodes;
@@ -17,14 +17,22 @@ public class Quadtree<Item, Location> implements QuadtreeInterface<Item, Locatio
 	// Inner Node Class - copied from lab 6 and adapted.
 	public class Node {
 		public Item data;
-		public Location location;
-		public Node[] branches;
+		public double xcoord;
+		public double ycoord;
+		public Node upperLeft;
+		public Node upperRight;
+		public Node lowerLeft;
+		public Node lowerRight;
 
 		// Inner Node constructor;
-		public Node(Item data, Location location){
+		public Node(Item data, double xcoord, double ycoord){
 			this.data = data;
-			this.location = location;
-			this.branches = new Node[4]; // Initializes each of the maximum of 4 branches as null;
+			this.xcoord = xcoord;
+			this.ycoord = ycoord;
+			this.upperLeft = null;
+			this.upperRight = null;
+			this.lowerLeft = null;
+			this.lowerRight = null;
 		}
 
 		// POSSIBLE AREA TO ADD STUFF -- a helper function that adds a branch to a node's branch?
@@ -47,7 +55,7 @@ public class Quadtree<Item, Location> implements QuadtreeInterface<Item, Locatio
 	// is already occupied.
 	// If successful, increases the Quadtree's size.
 	// - Andrew's
-	public boolean insert(Item object, Location place){
+	public boolean insert(Item object, double xcoord, double ycoord){
 		return false;
 	}
 
@@ -61,19 +69,19 @@ public class Quadtree<Item, Location> implements QuadtreeInterface<Item, Locatio
 
 	// Returns the object at a given location if one exists. Returns null otherwise.
 	// - Wyatt's
-	public Item get(Location place){
+	public Item get(double xcoord, double ycoord){
 		return null;
 	}
 
 	// Returns the closest object to a given location. 
 	// - Wyatt's
-	public Item closestObject(Location place){
+	public Item closestObject(double xcoord, double ycoord){
 		return null;
 	}
 
 	// Returns an ArrayList of all objects within a given distance from a location.
 	// - Wyatt's
-	public ArrayList<Item> withinDistance(Location place, float radius){
+	public ArrayList<Item> withinDistance(double xcoord, double ycoord, double radius){
 		return null;
 	}
 
