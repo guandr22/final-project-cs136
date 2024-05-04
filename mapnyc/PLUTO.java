@@ -4,7 +4,7 @@ import java.util.*;
 import java.io.*; 
 
 public class PLUTO{
-	public ArrayList<TaxPlot> taxplots; //temporary data structre, to be replaced with the quadtree
+	public ArrayList<TaxPlot> taxplots; //temporary data structre, to be replaced with quadtree
 	public Hashtable<String, TaxPlot> symbolTable; // address ---> taxplot
 
 	public PLUTO(String filename){
