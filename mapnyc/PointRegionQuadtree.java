@@ -16,6 +16,11 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 		this.numInternalNodes = 1;
 		this.root = new InternalNode(minX,maxX,minY,maxY);
 	}
+	public PointRegionQuadtree(BoundingBox box){
+		this.numLeaves = 0;
+		this.numInternalNodes = 1;
+		this.root = new InternalNode(box);
+	}
 
 	public class Node{
 	}
@@ -62,41 +67,6 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 	}
 
 	public class EmptyNode extends Node{} 
-
-	public class BoundingBox{
-		public double minX,maxX,minY,maxY;
-		public double centerX, centerY;
-
-		public BoundingBox(double minX,double maxX,double minY,double maxY){
-			this.minX = minX;
-			this.maxX = maxX;
-			this.minY = minY;
-			this.maxY = maxY;
-			centerX = (minX + maxX)/2;
-			centerY = (minY + maxY)/2;
-		}
-
-		public BoundingBox upperLeftBox(){
-			return new BoundingBox(minX,centerX,centerY,maxY);
-		}
-		public BoundingBox upperRightBox(){
-			return new BoundingBox(centerX,maxX,centerY,maxY);
-		}
-		public BoundingBox lowerLeftBox(){
-			return new BoundingBox(minX,centerX,minY,centerY);
-		}
-		public BoundingBox lowerRightBox(){
-			return new BoundingBox(centerX,maxX,minY,centerY);
-		}
-
-		public boolean inBox(double xcoord, double ycoord){
-			//If the coordinates are on the edge of the box, that counts
-			return xcoord>=minX && xcoord<=maxX && ycoord>=minY && ycoord<=maxY;
-		}
-		public String toString(){
-			return "x: " + minX + " to " + maxX + ", y: " + minY + " to " + maxY;
-		}
-	}
 
 	// Returns true if the Quadtree is empty.  
 	public boolean isEmpty(){
@@ -193,7 +163,7 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 	}
 
 	// Returns the object at a given location if one exists. Returns null otherwise.
-	// - Wyatt's. A variation on the get method for binary search trees, as written by Prof. Keith on slide "30-wrap-up"
+	// - Wyatt's
 	public Item get(double xcoord, double ycoord){
 		return getHelper(this.root, xcoord, ycoord);
 	}
@@ -236,6 +206,28 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 		return null;
 	}
 
+	// Returns an ArrayList of all the objects in the tree
+	// - Wyatt's
+	public ArrayList<Item> traversal(){
+		ArrayList<Item> items = new ArrayList<Item>();
+		traversalHelper(root, items);
+		return items;
+	}
+	public void traversalHelper(Node curNode, ArrayList<Item> items){
+		if (curNode instanceof PointRegionQuadtree.LeafNode){
+			LeafNode leaf = (LeafNode) curNode;
+			items.add(leaf.data);
+		}
+		//if we're at an internal node...
+		else if (curNode instanceof PointRegionQuadtree.InternalNode){
+			InternalNode cell = (InternalNode) curNode;		
+			traversalHelper(cell.upperLeft,items);
+			traversalHelper(cell.upperRight,items);
+			traversalHelper(cell.lowerLeft,items);
+			traversalHelper(cell.lowerRight,items);
+		}
+	}
+
 	public static void main(String[] args){
 		PointRegionQuadtree test = new PointRegionQuadtree<Integer>(0,16,0,16);
 		test.insert(0,5,5);
@@ -251,7 +243,9 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 		test.insert(0,13,5);
 		test.insert(0,13.0000002,5);
 		test.insert(0,13.00001,5);
-
+		
+		ArrayList<Integer> ints = test.traversal();
+		System.out.println(ints.toString());
 		System.out.println(test.get(135,5));
 		System.out.println(test.numInternalNodes);
 	}	

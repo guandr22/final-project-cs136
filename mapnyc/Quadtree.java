@@ -29,4 +29,7 @@ public interface Quadtree<Item>{
 
 	// Returns an ArrayList of all objects within a given distance from a location.
 	public abstract ArrayList<Item> withinDistance(double xcoord, double ycoord, double radius); 
+
+	// Returns an ArrayList of all objects in the tree
+	public abstract ArrayList<Item> traversal(); 
 } 

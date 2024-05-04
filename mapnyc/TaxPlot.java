@@ -48,6 +48,6 @@ public class TaxPlot{
 		
 	}
 	public String toString(){
-		return ownerName + ": " + xcoord + ", " + ycoord;
+		return address + ": (" + xcoord + ", " + ycoord+")";
 	}
 }
