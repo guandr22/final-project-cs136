@@ -65,7 +65,7 @@ public class PLUTO{
 	//What is the nearest [park/vacant lot/multi-family walk-up building]?
 
 	/*What is the nearest building owned by a person or corporation (same thing, really)
-	whose name includes the characters [for example, “Gates” or “Apple” or “City of New York”]?*/
+	whose name includes the characters [for example, "Gates" or "Apple" or "City of New York"]?*/
 
 
 

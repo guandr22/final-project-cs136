@@ -2,7 +2,11 @@ package mapnyc;
 
 import java.util.ArrayList;
 
-// this is a point-region quadtree, based off https://www.cs.cmu.edu/~ckingsf/bioinfo-lectures/quadtrees.pdf
+// This is a point-region quadtree (which we refer to as a PR quadtree), based on https://www.cs.cmu.edu/~ckingsf/bioinfo-lectures/quadtrees.pdf.
+/**
+ * A PR quadtree allows us to do functions like withinDistance(), as the quadrants on a given layer of the quadtree are of equal size.
+ */
+
 public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 
 	// Instance variables
@@ -25,7 +29,15 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 	public class Node{
 	}
 
-	// Inner Node Class - copied from lab 6 and adapted.
+	/** 
+	 * In a PR quadtree, there are two kinds of nodes, internal nodes (nodes with children), and leaves (nodes which store a given point in
+	 * two-dimension space but do not have children). We included a third type of node (the Empty Node) to represent areas without relevant points.
+	 * Each internal node has 4 children, and so we can imagine each subtree of the PR quadtree dividing a two-dimensional space into 4 equally
+	 * -sized quadrants, which either contain a point (a LeafNode), another four quadrants (an InternalNode), or nothing (an Empty Node).
+	 */
+
+	// An inner InternalNode class - copied from lab 6 and adapted.
+	// Divides a space into four equal-sized regions.
 	public class InternalNode extends Node{
 		public Node upperLeft;
 		public Node upperRight;
@@ -51,6 +63,7 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 		}
 	}
 
+	// A LeafNode stores a point in space and its associated information.
 	public class LeafNode extends Node{
 		public Item data;
 		public double xcoord;
@@ -66,8 +79,10 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 		}
 	}
 
+	// An EmptyNode denotes a space without points or further subdivisions.
 	public class EmptyNode extends Node{} 
 
+	// METHODS
 	// Returns true if the Quadtree is empty.  
 	public boolean isEmpty(){
 		return this.numLeaves == 0;
@@ -83,7 +98,6 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 	// Returns true if the addition is successful and false if the target location 
 	// is already occupied.
 	// If successful, increases the Quadtree's size.
-	// - Andrew's ---
 
 	public boolean insert(Item object, double xcoord, double ycoord){
 		//root.upperLeft = new InternalNode(0,10,0,5);
@@ -102,23 +116,23 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 			numLeaves ++;
 			return new LeafNode(object,xcoord,ycoord);
 		}
-		//if you're at a internalnode, call insert helper on the correct subtree
+		//if you're at an InternalNode, call insert helper on the subtree which contains the location you want to insert a node at.
 		if (curNode instanceof PointRegionQuadtree.InternalNode){
 			InternalNode cell = (InternalNode) curNode;
 
-			//upperleft
+			//upper left
 			if (box.upperLeftBox().inBox(xcoord,ycoord)){
 				cell.upperLeft = insertHelper(cell.upperLeft,object,xcoord,ycoord,box.upperLeftBox());
 			}
-			//upperright		
+			//upper right		
 			else if (box.upperRightBox().inBox(xcoord,ycoord)){
 				cell.upperRight = insertHelper(cell.upperRight,object,xcoord,ycoord,box.upperRightBox());
 			}
-			//lowerleft
+			//lower left
 			else if (box.lowerLeftBox().inBox(xcoord,ycoord)){
 				cell.lowerLeft = insertHelper(cell.lowerLeft,object,xcoord,ycoord,box.lowerLeftBox());
 			}
-			//lowerright
+			//lower right
 			else if (box.lowerRightBox().inBox(xcoord,ycoord)){
 				cell.lowerRight = insertHelper(cell.lowerRight,object,xcoord,ycoord,box.lowerRightBox());
 			}
@@ -129,7 +143,7 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 
 			return cell;
 		}
-		//if your at a leaf, crack it open---make a new internalnode, then insert the displaced and new data into it
+		//if you're at a leaf, crack it open---make a new internalnode, then insert the displaced leaf and new data into it
 		else if (curNode instanceof PointRegionQuadtree.LeafNode){
 			//create a new internal node
 			InternalNode newInternalNode = new InternalNode(box);
@@ -154,12 +168,18 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 		}
 	}
 
-	// Removes an object from the tree. Returns true if the removal is successful
+	// Removes the first instance of an object from the tree. Returns true if the removal is successful
 	// and false if the object was not present in the tree.
 	// If successful, decreases the Quadtree's size.
 	// - Andrew's
 	public boolean remove(Item object){
-		return false;
+		ArrayList<Item> objectsInTreeArr = traversal();
+		if (!objectsInTree.contains(Object)) return false;
+		else{
+			// FOR ANDREW AFTER DINNER --> CREATE A REMOVE HELPER FUNCTION WHICH NAVIGATES IN-ORDER TO THE FIRST INSTANCE
+			// OF AN OBJECT IN THE TREE, REMOVES IT, AND DECREASES THE TREE'S SIZE BY ONE.
+			return false;
+		}
 	}
 
 	// Returns the object at a given location if one exists. Returns null otherwise.
