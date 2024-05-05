@@ -31,7 +31,7 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 
 	/** 
 	 * In a PR quadtree, there are two kinds of nodes, internal nodes (nodes with children), and leaves (nodes which store a given point in
-	 * two-dimension space but do not have children). We included a third type of node (the Empty Node) to represent areas without relevant points.
+	 * two-dimension space but do not have children). We included a third type of node (the Empty Node) to represent areas without points.
 	 * Each internal node has 4 children, and so we can imagine each subtree of the PR quadtree dividing a two-dimensional space into 4 equally
 	 * -sized quadrants, which either contain a point (a LeafNode), another four quadrants (an InternalNode), or nothing (an Empty Node).
 	 */
@@ -168,17 +168,39 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 		}
 	}
 
-	// Removes the first instance of an object from the tree. Returns true if the removal is successful
+	// Remove all instances of an object from the tree. Returns true if the removal is successful
 	// and false if the object was not present in the tree.
 	// If successful, decreases the Quadtree's size.
 	// - Andrew's
 	public boolean remove(Item object){
 		ArrayList<Item> objectsInTreeArr = traversal();
-		if (!objectsInTree.contains(Object)) return false;
+		if (!objectsInTreeArr.contains(object)) return false; 
+			// Could speed this up by having the returnHelper return a boolean true if it removes an object and having the return line for
+			// the whole function be return false || returnHelper(root, object).
+			// would not require calling traversal().
 		else{
 			// FOR ANDREW AFTER DINNER --> CREATE A REMOVE HELPER FUNCTION WHICH NAVIGATES IN-ORDER TO THE FIRST INSTANCE
 			// OF AN OBJECT IN THE TREE, REMOVES IT, AND DECREASES THE TREE'S SIZE BY ONE.
-			return false;
+			removeHelper(root, object);
+			return true;
+		}
+	}
+
+	// A helper method for remove() using in-order traversal (inspired by Wyatt's traversalHelper()).
+	public void removeHelper(Node pointer, Item object){
+		if (pointer instanceof PointRegionQuadtree.LeafNode){
+			LeafNode leaf = (LeafNode) pointer;
+			if (leaf.data.equals(object)){
+				// leaf.data = null; 	FOR WYATT - Can I just make all of the EmptyNodes LeafNodes where leaf.data = null?
+			}
+		}
+
+		else if (pointer instanceof PointRegionQuadtree.InternalNode){
+			InternalNode cell = (InternalNode) pointer;		
+			removeHelper(cell.upperLeft, object);
+			removeHelper(cell.upperRight, object);
+			removeHelper(cell.lowerLeft, object);
+			removeHelper(cell.lowerRight, object);
 		}
 	}
 
