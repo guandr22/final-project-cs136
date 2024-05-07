@@ -18,15 +18,16 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 	public PointRegionQuadtree(double minX,double maxX,double minY,double maxY){
 		this.numLeaves = 0;
 		this.numInternalNodes = 1;
-		this.root = new InternalNode(minX,maxX,minY,maxY);
+		this.root = new InternalNode(null,minX,maxX,minY,maxY);
 	}
 	public PointRegionQuadtree(BoundingBox box){
 		this.numLeaves = 0;
 		this.numInternalNodes = 1;
-		this.root = new InternalNode(box);
+		this.root = new InternalNode(null,box);
 	}
 
 	public class Node{
+		public Node parent;
 	}
 
 	/** 
@@ -46,19 +47,21 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 		public BoundingBox box;
 
 		// Inner Node constructor;
-		public InternalNode(double minX,double maxX,double minY,double maxY){
-			this.upperLeft = new EmptyNode();
-			this.upperRight = new EmptyNode();
-			this.lowerLeft = new EmptyNode();
-			this.lowerRight = new EmptyNode();
+		public InternalNode(Node parent, double minX,double maxX,double minY,double maxY){
+			this.parent = parent;
+			this.upperLeft = new EmptyNode(this);
+			this.upperRight = new EmptyNode(this);
+			this.lowerLeft = new EmptyNode(this);
+			this.lowerRight = new EmptyNode(this);
 			this.box = new BoundingBox(minX,maxX,minY,maxY);
 		}
 
-		public InternalNode(BoundingBox box){
-			this.upperLeft = new EmptyNode();
-			this.upperRight = new EmptyNode();
-			this.lowerLeft = new EmptyNode();
-			this.lowerRight = new EmptyNode();
+		public InternalNode(Node parent, BoundingBox box){
+			this.parent = parent;
+			this.upperLeft = new EmptyNode(this);
+			this.upperRight = new EmptyNode(this);
+			this.lowerLeft = new EmptyNode(this);
+			this.lowerRight = new EmptyNode(this);
 			this.box = box;
 		}
 	}
@@ -69,7 +72,8 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 		public double xcoord;
 		public double ycoord;
 
-		public LeafNode(Item data, double xcoord, double ycoord){
+		public LeafNode(Node parent, Item data, double xcoord, double ycoord){
+			this.parent = parent;
 			this.data = data;
 			this.xcoord = xcoord;
 			this.ycoord = ycoord;
@@ -80,7 +84,11 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 	}
 
 	// An EmptyNode denotes a space without points or further subdivisions.
-	public class EmptyNode extends Node{} 
+	public class EmptyNode extends Node{
+		public EmptyNode(Node parent){
+			this.parent = parent;
+		}
+	} 
 
 	// METHODS
 	// Returns true if the Quadtree is empty.  
@@ -88,7 +96,7 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 		return this.numLeaves == 0;
 	}
 
-	// Returns the number of non-empty nodes.
+	// Returns the number of non-empty leaf nodes.
 	public int size(){
 		return this.numLeaves;
 	}
@@ -105,16 +113,16 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 			System.out.println("("+xcoord +", " + ycoord +")"+" not in region");
 			return false;
 		}
-		root = (InternalNode) insertHelper((Node) root, object, xcoord, ycoord,root.box);
+		root = (InternalNode) insertHelper((Node) root, null, object, xcoord, ycoord,root.box);
+		numLeaves ++;
 		return true;
 	}
 
-	public Node insertHelper(Node curNode,Item object, double xcoord,double ycoord,BoundingBox box){
+	public Node insertHelper(Node curNode, Node prevNode, Item object, double xcoord,double ycoord,BoundingBox box){
 		//the syntax "PointRegionQuadtree.EmptyNode" was explained to me by Claude.ai, as I was getting an error regarding generics
 		//base case:
 		if (curNode instanceof PointRegionQuadtree.EmptyNode){
-			numLeaves ++;
-			return new LeafNode(object,xcoord,ycoord);
+			return new LeafNode(prevNode, object,xcoord,ycoord);
 		}
 		//if you're at an InternalNode, call insert helper on the subtree which contains the location you want to insert a node at.
 		if (curNode instanceof PointRegionQuadtree.InternalNode){
@@ -122,19 +130,19 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 
 			//upper left
 			if (box.upperLeftBox().inBox(xcoord,ycoord)){
-				cell.upperLeft = insertHelper(cell.upperLeft,object,xcoord,ycoord,box.upperLeftBox());
+				cell.upperLeft = insertHelper(cell.upperLeft,curNode, object,xcoord,ycoord,box.upperLeftBox());
 			}
 			//upper right		
 			else if (box.upperRightBox().inBox(xcoord,ycoord)){
-				cell.upperRight = insertHelper(cell.upperRight,object,xcoord,ycoord,box.upperRightBox());
+				cell.upperRight = insertHelper(cell.upperRight,curNode,object,xcoord,ycoord,box.upperRightBox());
 			}
 			//lower left
 			else if (box.lowerLeftBox().inBox(xcoord,ycoord)){
-				cell.lowerLeft = insertHelper(cell.lowerLeft,object,xcoord,ycoord,box.lowerLeftBox());
+				cell.lowerLeft = insertHelper(cell.lowerLeft,curNode,object,xcoord,ycoord,box.lowerLeftBox());
 			}
 			//lower right
 			else if (box.lowerRightBox().inBox(xcoord,ycoord)){
-				cell.lowerRight = insertHelper(cell.lowerRight,object,xcoord,ycoord,box.lowerRightBox());
+				cell.lowerRight = insertHelper(cell.lowerRight,curNode,object,xcoord,ycoord,box.lowerRightBox());
 			}
 			else{
 				//this should never happen
@@ -146,7 +154,7 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 		//if you're at a leaf, crack it open---make a new internalnode, then insert the displaced leaf and new data into it
 		else if (curNode instanceof PointRegionQuadtree.LeafNode){
 			//create a new internal node
-			InternalNode newInternalNode = new InternalNode(box);
+			InternalNode newInternalNode = new InternalNode(prevNode, box);
 			numInternalNodes ++;
 			//temporarily store the old information
 			LeafNode oldLeaf = (LeafNode) curNode;
@@ -154,10 +162,10 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 			if (oldLeaf.xcoord ==xcoord && oldLeaf.ycoord==ycoord){
 				System.out.println("the coordinates are already taken!--"+xcoord + ","+ycoord);
 			}
-			// add old object to the new internal node
-			newInternalNode = (InternalNode) insertHelper(newInternalNode,oldLeaf.data,oldLeaf.xcoord,oldLeaf.ycoord,box);
+			// add old object to the new internal node //
+			newInternalNode = (InternalNode) insertHelper(newInternalNode,null,oldLeaf.data,oldLeaf.xcoord,oldLeaf.ycoord,box);
 			// add new object to the new internal node
-			newInternalNode = (InternalNode) insertHelper(newInternalNode,object,xcoord,ycoord,box);
+			newInternalNode = (InternalNode) insertHelper(newInternalNode,null,object,xcoord,ycoord,box);
 
 			return newInternalNode;
 		}
@@ -216,7 +224,14 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 		}
 		else if (curNode instanceof PointRegionQuadtree.LeafNode){
 			LeafNode leaf = (LeafNode) curNode;
-			return leaf.data;
+			//If this leaf node is at the search coordinates, then return its data
+			if (leaf.xcoord == xcoord && leaf.ycoord == ycoord){
+				return leaf.data;
+			}
+			//If this leaf node isn't, then where the sought-after leaf node ought to be, there is nothing, so return null
+			else{
+				return null;
+			}
 		}
 		//if we're at an internal node...
 		Item data = null;
@@ -273,22 +288,13 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 	public static void main(String[] args){
 		PointRegionQuadtree test = new PointRegionQuadtree<Integer>(0,16,0,16);
 		test.insert(0,5,5);
-		test.insert(0,4,4);
-		test.insert(0,3,3);
-		test.insert(0,2,2);
-		test.insert(0,1,1);
-		test.insert(0,3.00003,1);
-		test.insert(0,.5,.5);
-		test.insert(0,10,5);
-		test.insert(0,11,5);
-		test.insert(0,12,5);
-		test.insert(0,13,5);
-		test.insert(0,13.0000002,5);
-		test.insert(0,13.00001,5);
+		test.insert(1,4,4);
+		test.insert(2,3,3);
+		test.insert(3,2,2);
+		test.insert(4,1,1);
 		
 		ArrayList<Integer> ints = test.traversal();
-		System.out.println(ints.toString());
-		System.out.println(test.get(135,5));
-		System.out.println(test.numInternalNodes);
+		System.out.println(test.get(3,3.1));
+
 	}	
 }
