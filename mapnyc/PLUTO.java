@@ -73,6 +73,7 @@ public class PLUTO extends JFrame{
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setSize(WINDOW_WIDTH,WINDOW_HEIGHT);
 		this.setVisible(true);
+		System.out.println(taxplots.get(0).toStringExhaustive());
 	}
 	public void setRegion(){
 		//necessary to set defaults to numbers in the range, not 0s or +-infinities, otherwise it's not "centered"
@@ -144,8 +145,7 @@ public class PLUTO extends JFrame{
 	//What’s the average [age/height/square footage/land value/total value] of a building within X miles of me? 
 
 	public static void main(String[] args){
-		PLUTO map = new PLUTO("mapnyc/toy.csv","mapnyc/state_plane_nyc.jpg");
-		//System.out.println(TaxPlot.numCorrupted);
+		PLUTO map = new PLUTO("mapnyc/pluto_24v1_1.csv","mapnyc/state_plane_nyc.jpg");
 	}
 }
 

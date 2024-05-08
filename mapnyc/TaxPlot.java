@@ -23,60 +23,70 @@ public class TaxPlot{
 		lineOfData = lineOfData.replace(", ", "~");
 		String[] data = lineOfData.split(",");
 
-		//String[] data = lineOfData.split(",");
-		//data = Arrays.copyOfRange(data, 18, data.length);
-
 		try{
+			//no try and catch, because these are essential facts
 			xcoord = Integer.valueOf(data[75]);
 			ycoord = Integer.valueOf(data[76]);
-			//System.out.println(data.length);
-		}
-		catch(Exception e2){
+			address = data[18];
+
+			//combines first and last names
+			String[] ownerNames = data[34].split("~");
+			ownerName = ownerNames[0];
+			if (ownerNames.length==2){
+				ownerName += ", " + ownerNames[1];
+			}
+
 			try{
-				xcoord = Integer.valueOf(data[74]);
-			 	ycoord = Integer.valueOf(data[75]);
-			 	//System.out.println("Failed once: " +lineOfData + data.length);
+				landuse = Integer.valueOf(data[31]);
+			} catch (Exception q){
+				landuse = -1;
 			}
-			catch(Exception e){
-				//System.out.println("Doubly failed: " +lineOfData);
-				corruptedData = true;
+			try{
+				numFloors = Double.valueOf(data[47]);
+			} catch (Exception q){
+				numFloors = -1;
 			}
-		}
+			try{
+				yearBuilt = Integer.valueOf(data[62]);
+			} catch (Exception q){
+				yearBuilt = -1;
+			}
+			try{
+				assessedLandValue = Double.valueOf(data[59]);
+			} catch (Exception q){
+				assessedLandValue = -1;
+			}
+			try{
+				assessedTotalValue = Double.valueOf(data[60]);
+			} catch (Exception q){
+				assessedTotalValue = -1;
+			}
+			try{
+				totalBuildingArea = Double.valueOf(data[36]);
+			} catch (Exception q){
+				totalBuildingArea = -1;
+			}
+			try{
+				lotArea = Double.valueOf(data[35]);
+			} catch (Exception q){
+				lotArea = -1;
+			}
 
-		address = data[18];
-		/*
-		//combines first and last names
-		String[] ownerNames = data[34].split("~");
-		ownerName = ownerNames[0];
-		if (ownerNames.length==2){
-			ownerName += ", " + ownerNames[1];
 		}
-		*/
-		//System.out.println(this.toString());
-		/*
-		if (data[31].equals("")){
-			landuse = 0;
-		} else {
-			landuse = Integer.valueOf(data[31]);
+		catch(Exception e){
+			corruptedData = true;
+			//System.out.print("*");
 		}
-
-		if (data[47].equals("")){
-			numFloors = 0;
-		} else {
-			numFloors = Double.valueOf(data[47]);
-		}
-
-		yearBuilt = Integer.valueOf(data[62]);
-		assessedLandValue = Double.valueOf(data[59]);
-	
-		assessedTotalValue = Double.valueOf(data[60])
-
-		totalBuildingArea = Double.valueOf(data[36]);
-		lotArea = Double.valueOf(data[35]);
-		*/
+		
 		
 	}
+
 	public String toString(){
 		return address + ": (" + xcoord + ", " + ycoord+")";
+	}
+	public String toStringExhaustive(){
+		return "address: "+ address + ": (" + xcoord + ", " + ycoord+")" + " ownerName: " 
+		+ ownerName + " numFloors: " + numFloors + "yearBuilt: " + yearBuilt + "assessedLandValue: " +
+		assessedLandValue + "assessedTotalValue: " + assessedTotalValue + "totalBuildingArea: " + totalBuildingArea + "lotArea: " + lotArea;
 	}
 }

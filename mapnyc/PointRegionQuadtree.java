@@ -115,7 +115,7 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 		}
 		root = (InternalNode) insertHelper((Node) root, null, object, xcoord, ycoord,root.box);
 		numLeaves ++;
-		return true;
+		return true; //this isn't foolproof. Returns true, even when the spot is taken!
 	}
 
 	public Node insertHelper(Node curNode, Node prevNode, Item object, double xcoord,double ycoord,BoundingBox box){
@@ -156,18 +156,14 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 			//check for a "collision". If there is one, don't add the new object.
 			LeafNode oldLeaf = (LeafNode) curNode;
 			if (oldLeaf.xcoord ==xcoord && oldLeaf.ycoord==ycoord){
-				System.out.println("There is already an object at ("+xcoord + ", "+ycoord+ "). Insertion failed.");
+				//System.out.println("There is already an object at ("+xcoord + ", "+ycoord+ "). Insertion failed.");
 				return curNode;
 			}
 			else {
 				//create a new internal node
 				InternalNode newInternalNode = new InternalNode(prevNode, box);
 				numInternalNodes ++;
-				//temporarily store the old information
-				//check for a "collision"
-				if (oldLeaf.xcoord ==xcoord && oldLeaf.ycoord==ycoord){
-					System.out.println("the coordinates are already taken!--"+xcoord + ","+ycoord);
-				}
+
 				// add old object to the new internal node //
 				newInternalNode = (InternalNode) insertHelper(newInternalNode,null,oldLeaf.data,oldLeaf.xcoord,oldLeaf.ycoord,box);
 				// add new object to the new internal node
