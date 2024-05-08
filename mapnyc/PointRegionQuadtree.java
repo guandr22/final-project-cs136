@@ -5,7 +5,7 @@ import java.util.*;
 import java.io.*; 
 // This is a point-region quadtree (which we refer to as a PR quadtree), based on https://www.cs.cmu.edu/~ckingsf/bioinfo-lectures/quadtrees.pdf.
 /**
- * A PR quadtree allows us to do functions like withinDistance(), as the quadrants on a given layer of the quadtree are of equal size.
+ * A PR quadtree helps us do functions like withinDistance(), as the quadrants on a given layer of the quadtree are of equal size.
  */
 
 public class PointRegionQuadtree<Item> implements Quadtree<Item>{
@@ -391,12 +391,15 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 
 	public static void main(String[] args){
 		PointRegionQuadtree test = new PointRegionQuadtree<Integer>(0.0,5.0,0.0,16.0);
+		assert test.isEmpty() == true;
 		test.insert(0,5.0,5.0);
 		test.insert(1,4.0,4.0);
 		test.insert(2,3.0,3.0);
 		test.insert(3,2.0,2.0);
 		test.insert(4,1.0,1.0);
 		test.insert(5,1.0,1.1);
+		assert test.size() == 6;
+		assert test.isEmpty() == false;
 
 
 		System.out.println(test.root.toString());

@@ -100,12 +100,6 @@ public class PLUTO extends JFrame{
 		//System.out.println(region.toString());
 	}
 
-	//What is the nearest [park/vacant lot/multi-family walk-up building]?
-
-	/*What is the nearest building owned by a person or corporation (same thing, really)
-	whose name includes the characters [for example, "Gates" or "Apple" or "City of New York"]?*/
-
-
 	//getXPixel and getYPixel make use of the 
 	public int getXPixel(TaxPlot taxplot){
 		return (int)((taxplot.xcoord - BOTTOMLEFT_XCOORD) * PIXELS_TO_COORDS_RATIO);
@@ -131,6 +125,16 @@ public class PLUTO extends JFrame{
 
 		g.drawImage(bf,0,0,null);
 	}
+
+	//What is the nearest [park/vacant lot/multi-family walk-up building]?
+	public String nearest(double xcoord, double ycoord, String userInput){
+		return "";
+	}
+
+	/*What is the nearest building owned by a person or corporation (same thing, really)
+	whose name includes the characters [for example, "Gates" or "Apple" or "City of New York"]?*/
+	 
+
 
 	//Who owns the building at this address?
 	public String getOwner(String address){
