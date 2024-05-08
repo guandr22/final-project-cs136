@@ -49,25 +49,24 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 		// Inner Node constructor;
 		public InternalNode(Node parent, double minX,double maxX,double minY,double maxY){
 			this.parent = parent;
-			this.upperLeft = new LeafNode(this);
-			this.upperRight = new LeafNode(this);
-			this.lowerLeft = new LeafNode(this);
-			this.lowerRight = new LeafNode(this);
+			this.upperLeft = new EmptyNode(this);
+			this.upperRight = new EmptyNode(this);
+			this.lowerLeft = new EmptyNode(this);
+			this.lowerRight = new EmptyNode(this);
 			this.box = new BoundingBox(minX,maxX,minY,maxY);
 		}
 
 		public InternalNode(Node parent, BoundingBox box){
 			this.parent = parent;
-			this.upperLeft = new LeafNode(this);
-			this.upperRight = new LeafNode(this);
-			this.lowerLeft = new LeafNode(this);
-			this.lowerRight = new LeafNode(this);
+			this.upperLeft = new EmptyNode(this);
+			this.upperRight = new EmptyNode(this);
+			this.lowerLeft = new EmptyNode(this);
+			this.lowerRight = new EmptyNode(this);
 			this.box = box;
 		}
 	}
 
 	// A LeafNode stores a point in space and its associated information.
-	// LeafNodes with data = null are empty nodes, denoting an empty region of space.
 	public class LeafNode extends Node{
 		public Item data;
 		public double xcoord;
@@ -79,32 +78,17 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 			this.xcoord = xcoord;
 			this.ycoord = ycoord;
 		}
-
-		// Alternate constructor for an empty LeafNode
-		public LeafNode(Node parent){
-			this.parent = parent;
-			this.data = null;
-		}
-
-		public boolean emptyNode(){
-			return this.data == null;
-		}
-
-		public void setEmpty(){
-			this.data = null;
-		}
-
 		public String toString(){
 			return "("+xcoord + ","+ycoord +")-->" + data; 
 		}
 	}
 
 	// An EmptyNode denotes a space without points or further subdivisions.
-	// public class EmptyNode extends Node{
-	// 	public EmptyNode(Node parent){
-	// 		this.parent = parent;
-	// 	}
-	// } 
+	public class EmptyNode extends Node{
+		public EmptyNode(Node parent){
+			this.parent = parent;
+		}
+	} 
 
 	// METHODS
 	// Returns true if the Quadtree is empty.  
@@ -135,14 +119,10 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 	}
 
 	public Node insertHelper(Node curNode, Node prevNode, Item object, double xcoord,double ycoord,BoundingBox box){
-		//the syntax "PointRegionQuadtree.LeafNode" was explained to me by Claude.ai, as I was getting an error regarding generics
+		//the syntax "PointRegionQuadtree.EmptyNode" was explained to me by Claude.ai, as I was getting an error regarding generics
 		//base case:
-		if (curNode instanceof PointRegionQuadtree.LeafNode){
-			LeafNode nonEmptyLeaf = (LeafNode) curNode;
-			// Need to make sure that the node we replace does not contain data.
-			if (!nonEmptyLeaf.emptyNode()){
-				return new LeafNode(prevNode, object,xcoord,ycoord);
-			}
+		if (curNode instanceof PointRegionQuadtree.EmptyNode){
+			return new LeafNode(prevNode, object,xcoord,ycoord);
 		}
 		//if you're at an InternalNode, call insert helper on the subtree which contains the location you want to insert a node at.
 		if (curNode instanceof PointRegionQuadtree.InternalNode){
@@ -221,7 +201,21 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 		if (pointer instanceof PointRegionQuadtree.LeafNode){
 			LeafNode leaf = (LeafNode) pointer;
 			if (leaf.data.equals(object)){
-				leaf.setEmpty();
+				// Replace the leaf with an EmptyNode. Due to Java's class requirements, this requires going to 
+				// the leaf's parent in order to conduct a deletion. 
+				InternalNode parentPointer = (InternalNode) leaf.parent; // All parent nodes in practice should be Internal Nodes
+				if (parentPointer.upperLeft.equals(leaf)) {
+					parentPointer.upperLeft = new EmptyNode(parentPointer);
+				}
+				if (parentPointer.upperRight.equals(leaf)) {
+					parentPointer.upperRight = new EmptyNode(parentPointer);
+				}
+				if (parentPointer.lowerLeft.equals(leaf)) {
+					parentPointer.lowerLeft = new EmptyNode(parentPointer);
+				}
+				if (parentPointer.lowerRight.equals(leaf)) {
+					parentPointer.lowerRight = new EmptyNode(parentPointer);
+				}
 				numLeaves--;
 			}
 		}
@@ -242,25 +236,20 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 	}
 
 	public Item getHelper(Node curNode, double xcoord, double ycoord){
-		if (curNode instanceof PointRegionQuadtree.LeafNode){
-			// Checking for an empty node.
-			LeafNode nonEmptyLeaf = (LeafNode) curNode;
-			if (nonEmptyLeaf.emptyNode()){
+		if (curNode instanceof PointRegionQuadtree.EmptyNode){
+			return null;
+		}
+		else if (curNode instanceof PointRegionQuadtree.LeafNode){
+			LeafNode leaf = (LeafNode) curNode;
+			//If this leaf node is at the search coordinates, then return its data
+			if (leaf.xcoord == xcoord && leaf.ycoord == ycoord){
+				return leaf.data;
+			}
+			//If this leaf node isn't, then where the sought-after leaf node ought to be, there is nothing, so return null
+			else{
 				return null;
 			}
-			else {
-				LeafNode leaf = (LeafNode) curNode;
-				//If this leaf node is at the search coordinates, then return its data
-				if (leaf.xcoord == xcoord && leaf.ycoord == ycoord){
-					return leaf.data;
-				}
-				//If this leaf node isn't, then where the sought-after leaf node ought to be, there is nothing, so return null
-				else{
-					return null;
-				}
-			}
 		}
-
 		//if we're at an internal node...
 		Item data = null;
 		InternalNode cell = (InternalNode) curNode;
@@ -324,15 +313,15 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 
 		test.insert(7,1.0,1.0);
 		
-		// ArrayList<Integer> ints = test.traversal();
-		// System.out.println(ints.toString());
+		ArrayList<Integer> ints = test.traversal();
+		System.out.println(ints.toString());
 		//System.out.println(test.get(3,3.1));
 
 		assert test.remove(6) == false;
 		assert test.remove(5) == false;
 		assert test.remove(1) == true;
-		// ints = test.traversal();
-		// System.out.println(ints.toString());
+		ints = test.traversal();
+		System.out.println(ints.toString());
 
 	}	
 }
