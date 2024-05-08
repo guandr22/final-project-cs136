@@ -1,7 +1,8 @@
 package mapnyc;
 
 import java.util.ArrayList;
-
+import java.util.*; 
+import java.io.*; 
 // This is a point-region quadtree (which we refer to as a PR quadtree), based on https://www.cs.cmu.edu/~ckingsf/bioinfo-lectures/quadtrees.pdf.
 /**
  * A PR quadtree allows us to do functions like withinDistance(), as the quadrants on a given layer of the quadtree are of equal size.
@@ -64,6 +65,12 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 			this.lowerRight = new EmptyNode(this);
 			this.box = box;
 		}
+		public String toString(){
+			return "[" + upperLeft.toString() + ", "
+			+ upperRight.toString() + ", "
+			+ lowerLeft.toString() + ", "
+			+ lowerRight.toString() + "]";
+		}
 	}
 
 	// A LeafNode stores a point in space and its associated information.
@@ -87,6 +94,9 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 	public class EmptyNode extends Node{
 		public EmptyNode(Node parent){
 			this.parent = parent;
+		}
+		public String toString(){
+			return "emptyNode";
 		}
 	} 
 
@@ -225,99 +235,172 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 		}
 	}
 
-	// Returns the object at a given location if one exists. Returns null otherwise.
+	// Returns the object at a given location if one exists. Otherwise, returns null
 	// - Wyatt's
 	public Item get(double xcoord, double ycoord){
-		return getHelper(this.root, xcoord, ycoord);
+		Node closestNode = getHelper(this.root, null, xcoord, ycoord);
+		if (closestNode instanceof PointRegionQuadtree.LeafNode){
+			LeafNode leaf = (LeafNode) closestNode;
+			return leaf.data;
+		}
+		return null;
 	}
 
-	public Item getHelper(Node curNode, double xcoord, double ycoord){
+	//Returns the node at a given location if one exists. Otherwise, returns the internal node that bounds that location.
+	public Node getHelper(Node curNode, Node prevNode, double xcoord, double ycoord){
 		if (curNode instanceof PointRegionQuadtree.EmptyNode){
-			return null;
+			return prevNode;
 		}
 		else if (curNode instanceof PointRegionQuadtree.LeafNode){
 			LeafNode leaf = (LeafNode) curNode;
 			//If this leaf node is at the search coordinates, then return its data
 			if (leaf.xcoord == xcoord && leaf.ycoord == ycoord){
-				return leaf.data;
+				return leaf;
 			}
 			//If this leaf node isn't, then where the sought-after leaf node ought to be, there is nothing, so return null
 			else{
-				return null;
+				return prevNode;
 			}
 		}
 		//if we're at an internal node...
-		Item data = null;
+		Node nextNode = null;
 		InternalNode cell = (InternalNode) curNode;
 		if (cell.box.upperLeftBox().inBox(xcoord,ycoord)){
-			data = getHelper(cell.upperLeft,xcoord,ycoord);
+			nextNode = getHelper(cell.upperLeft,cell,xcoord,ycoord);
 		}
 		else if (cell.box.upperRightBox().inBox(xcoord,ycoord)){
-			data = getHelper(cell.upperRight,xcoord,ycoord);
+			nextNode = getHelper(cell.upperRight,cell,xcoord,ycoord);
 		}
 		else if (cell.box.lowerLeftBox().inBox(xcoord,ycoord)){
-			data = getHelper(cell.lowerLeft,xcoord,ycoord);
+			nextNode = getHelper(cell.lowerLeft,cell,xcoord,ycoord);
 		}
 		else if (cell.box.lowerRightBox().inBox(xcoord,ycoord)){
-			data = getHelper(cell.lowerRight,xcoord,ycoord);
+			nextNode = getHelper(cell.lowerRight,cell,xcoord,ycoord);
 		}
-		return data;
+		return nextNode;
 	}
 
-	// Returns the closest object to a given location. 
+	// Returns the approximately closest object to a given location. 
+	// The higher the exhaustiveness, the more likely it is to return the truly closest object
+	// The exhaustiveness represents each additional box above the box in which the coordinates are that you check
 	// - Wyatt's
-	public Item closestObject(double xcoord, double ycoord){
-		return null;
+	public Item closestObject(double xcoord, double ycoord, int exhaustiveness){
+		//searchNode is the node under which you check every point
+		Node searchNode = getHelper(this.root, null, xcoord, ycoord);
+		//If searchNode is a leaf, return that leaf's data
+		if (searchNode instanceof PointRegionQuadtree.LeafNode){
+			LeafNode leaf = (LeafNode) searchNode;
+			return leaf.data;
+		}
+
+		//Move searchNode up the tree a number of levels equal to the exhaustiveness of the search
+		while (exhaustiveness>0 && searchNode.parent != null){
+			exhaustiveness --;
+			searchNode = searchNode.parent;
+		}
+
+		//leafNodes is the list of all leafNodes below the searchNode
+		ArrayList<LeafNode> leafNodes = new ArrayList<LeafNode>();
+		traversalHelper(searchNode, leafNodes);
+
+		//For each leafNode, calculate the distance to (xcoord,ycoord), in order to find the minimum distance
+		double minDistance = Double.POSITIVE_INFINITY;
+		LeafNode closestNode = null;
+
+		for (LeafNode leaf: leafNodes){
+			double dist = Math.hypot(xcoord-leaf.xcoord, ycoord-leaf.ycoord);
+			if (dist < minDistance){
+				closestNode = leaf;
+				minDistance = dist;
+			}
+		}
+
+		//return the closestNode's data
+		return closestNode.data;
 	}
 
 	// Returns an ArrayList of all objects within a given distance from a location.
 	// - Wyatt's
 	public ArrayList<Item> withinDistance(double xcoord, double ycoord, double radius){
-		return null;
+		//Find the node either at the coordinates, or that bounds the coordinates
+		Node getHelped = getHelper(this.root, null, xcoord, ycoord);
+		//If that node is a leafNode, go up to its parent
+		if (getHelped instanceof PointRegionQuadtree.LeafNode){
+			getHelped = getHelped.parent;
+		}
+		//Type cast that parent to an InternalNode (so we can access its bounding box)
+		InternalNode searchNode = (InternalNode) getHelped;
+
+		//Move searchNode up the tree until you hit a boundingBox that has a width/height > radius
+		while (searchNode.parent != null){
+			// The approximation behind this logic is:
+			// if the width and height of the box you are searching is greater than the radius,
+			// there is a good chance any object within that radius will also be within the box
+			if (searchNode.box.width > radius && searchNode.box.height > radius){
+				System.out.println(searchNode.box.width + " " + searchNode.box.height + ", radius:" + radius);
+				break;
+			}
+			searchNode = (InternalNode) searchNode.parent;
+		}
+		//leafNodes is the list of all leafNodes below the searchNode
+		ArrayList<LeafNode> leafNodes = new ArrayList<LeafNode>();
+		traversalHelper(searchNode, leafNodes);
+
+		//make an arrayList of outputs. Then add the data of every leaf below searchNode that is within the radius.
+		ArrayList<Item> output = new ArrayList<Item>();
+
+		for (LeafNode leaf: leafNodes){
+			double dist = Math.hypot(xcoord-leaf.xcoord, ycoord-leaf.ycoord);
+			if (dist <= radius){
+				output.add(leaf.data);
+			}
+		}
+
+		//return that list
+		return output;
 	}
 
 	// Returns an ArrayList of all the objects in the tree
 	// - Wyatt's
 	public ArrayList<Item> traversal(){
+		ArrayList<LeafNode> leafNodes = new ArrayList<LeafNode>();
+		traversalHelper(this.root, leafNodes);
 		ArrayList<Item> items = new ArrayList<Item>();
-		traversalHelper(root, items);
-		return items;
-	}
-	public void traversalHelper(Node curNode, ArrayList<Item> items){
-		if (curNode instanceof PointRegionQuadtree.LeafNode){
-			LeafNode leaf = (LeafNode) curNode;
+		for (LeafNode leaf: leafNodes){
 			items.add(leaf.data);
 		}
-		//if we're at an internal node...
+		return items;
+	}
+
+	//Starting from some InternalNode, this adds all the leafNodes below it to some preexisting arraylist
+	public void traversalHelper(Node curNode, ArrayList<LeafNode> leafNodes){
+		//base case: if you're at a leaf, add it to the list
+		if (curNode instanceof PointRegionQuadtree.LeafNode){
+			LeafNode leaf = (LeafNode) curNode;
+			leafNodes.add(leaf);
+		}
+		//if we're at an internal node, call the helper on all children nodes
 		else if (curNode instanceof PointRegionQuadtree.InternalNode){
 			InternalNode cell = (InternalNode) curNode;		
-			traversalHelper(cell.upperLeft,items);
-			traversalHelper(cell.upperRight,items);
-			traversalHelper(cell.lowerLeft,items);
-			traversalHelper(cell.lowerRight,items);
+			traversalHelper(cell.upperLeft,leafNodes);
+			traversalHelper(cell.upperRight,leafNodes);
+			traversalHelper(cell.lowerLeft,leafNodes);
+			traversalHelper(cell.lowerRight,leafNodes);
 		}
 	}
 
 	public static void main(String[] args){
-		PointRegionQuadtree test = new PointRegionQuadtree<Integer>(0.0,16.0,0.0,16.0);
+		PointRegionQuadtree test = new PointRegionQuadtree<Integer>(0.0,5.0,0.0,16.0);
 		test.insert(0,5.0,5.0);
 		test.insert(1,4.0,4.0);
 		test.insert(2,3.0,3.0);
 		test.insert(3,2.0,2.0);
 		test.insert(4,1.0,1.0);
-		test.insert(5,1.0,1.0);
+		test.insert(5,1.0,1.1);
 
-		test.insert(7,1.0,1.0);
-		
-		ArrayList<Integer> ints = test.traversal();
-		System.out.println(ints.toString());
-		//System.out.println(test.get(3,3.1));
 
-		assert test.remove(6) == false;
-		assert test.remove(5) == false;
-		assert test.remove(1) == true;
-		ints = test.traversal();
-		System.out.println(ints.toString());
+		System.out.println(test.root.toString());
+		System.out.println(test.withinDistance(1,1.11,1).toString());
 
 	}	
 }

@@ -25,11 +25,11 @@ public interface Quadtree<Item>{
 	public abstract Item get(double xcoord, double ycoord);
 
 	// Returns the closest object to a given location. 
-	public abstract Item closestObject(double xcoord, double ycoord);
+	public abstract Item closestObject(double xcoord, double ycoord, int exhaustiveness);
 
 	// Returns an ArrayList of all objects within a given distance from a location.
 	public abstract ArrayList<Item> withinDistance(double xcoord, double ycoord, double radius); 
 
-	// Returns an ArrayList of all objects in the tree
+	// Returns an ArrayList of all objects in the tree below the given node
 	public abstract ArrayList<Item> traversal(); 
 } 
