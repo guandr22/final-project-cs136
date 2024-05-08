@@ -3,6 +3,7 @@ package mapnyc;
 public class BoundingBox{
 	public double minX,maxX,minY,maxY;
 	public double centerX, centerY;
+	public double width, height;
 
 	public BoundingBox(double minX,double maxX,double minY,double maxY){
 		this.minX = minX;
@@ -11,6 +12,8 @@ public class BoundingBox{
 		this.maxY = maxY;
 		centerX = (minX + maxX)/2;
 		centerY = (minY + maxY)/2;
+		width = maxX - minX;
+		height = maxY- minY;
 	}
 
 	public BoundingBox upperLeftBox(){

@@ -2,27 +2,46 @@ package mapnyc;
 
 import java.util.*; 
 import java.io.*; 
+//graphics packages (from LAB 2)
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import javax.swing.JFrame;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
 
-public class PLUTO{
+public class PLUTO extends JFrame{
 
 	public ArrayList<TaxPlot> taxplots; //used to iterate through once, find the max and min xs and ys, in order to set up quadtree
 	public Hashtable<String, TaxPlot> symbolTable; // address ---> taxplot
 	public PointRegionQuadtree<TaxPlot> quadtree;
 	public BoundingBox region;
+	public final int WINDOW_WIDTH, WINDOW_HEIGHT;
+	public BufferedImage bf;
+	public BufferedImage nycJPG;
 
-	public PLUTO(String filename){
+	//I used Liberty Island and U Thant Island as set points to calculate this these constants
+	//I used screenshots to figure out their pixel position, and their coordinates are included in pluto.csv
+	public final double PIXELS_TO_COORDS_RATIO = 1/270.3317839;
+	//the BOTTOMLEFT_XCOORD and BOTTOMLEFT_YCOORD are the x and y cordinates cooresponding to the bottom left of the window.
+	public final double BOTTOMLEFT_XCOORD = 895306.8989;
+	public final double BOTTOMLEFT_YCOORD = 113704.226;
+
+	public PLUTO(String filename, String jpgfilename){
 		taxplots = new ArrayList<TaxPlot>();
 		symbolTable = new Hashtable<>();
-
 		File file = new File(filename); 
 		try{
             Scanner scanner = new Scanner(file);
             scanner.nextLine(); //skip the first line of data labels
-            while (scanner.hasNextLine()) {
+            int numTaxPlots = 10000000;
+            while (scanner.hasNextLine() && numTaxPlots >=0) {
         		String line = scanner.nextLine();
         		TaxPlot nextTaxplot = new TaxPlot(line);
-        		taxplots.add(nextTaxplot);
-        		
+        		if (!nextTaxplot.corruptedData){
+        			taxplots.add(nextTaxplot);
+        		}
+        		numTaxPlots --;
         	}
         } catch (FileNotFoundException e) {
             System.out.println("File not found: " + e.getMessage());
@@ -30,12 +49,30 @@ public class PLUTO{
 
         //iterate through to find max/min x and y, in order to set boundaries
         setRegion();
+
         quadtree = new PointRegionQuadtree<TaxPlot>(region);
         //iterate through points in order to insert into symbol table and quadtree
         for (TaxPlot taxplot: taxplots){
         	symbolTable.put(taxplot.address, taxplot);
         	quadtree.insert(taxplot, taxplot.xcoord, taxplot.ycoord);
         }
+
+        //set up jpg
+        File jpgFile = new File(jpgfilename);
+        try{
+			nycJPG = ImageIO.read(jpgFile);
+		} catch (Exception e){
+			System.out.println("File not found: " + e.getMessage());
+		}
+
+        WINDOW_WIDTH = nycJPG.getWidth();
+        WINDOW_HEIGHT = nycJPG.getHeight();
+
+        bf = new BufferedImage(WINDOW_WIDTH,WINDOW_HEIGHT, BufferedImage.TYPE_INT_RGB);
+        //jframe = new JFrame("mapnyc");
+        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		this.setSize(WINDOW_WIDTH,WINDOW_HEIGHT);
+		this.setVisible(true);
 	}
 	public void setRegion(){
 		//necessary to set defaults to numbers in the range, not 0s or +-infinities, otherwise it's not "centered"
@@ -68,6 +105,31 @@ public class PLUTO{
 	whose name includes the characters [for example, "Gates" or "Apple" or "City of New York"]?*/
 
 
+	//getXPixel and getYPixel make use of the 
+	public int getXPixel(TaxPlot taxplot){
+		return (int)((taxplot.xcoord - BOTTOMLEFT_XCOORD) * PIXELS_TO_COORDS_RATIO);
+	}
+	public int getYPixel(TaxPlot taxplot){
+		return WINDOW_HEIGHT - (int)((taxplot.ycoord - BOTTOMLEFT_YCOORD) * PIXELS_TO_COORDS_RATIO);
+	}
+
+	public void paint(Graphics g){
+		Graphics2D g2 = (Graphics2D) bf.getGraphics();
+		//Set the jpg of NYC as the background
+		try{
+			g2.drawImage(nycJPG,0,0,null);
+		}
+		catch (Exception e){}
+
+		g2.setPaint(Color.RED);
+
+		//Put a pixel of red for each taxplot
+		for (TaxPlot taxplot: taxplots){
+			g2.fillRect(getXPixel(taxplot), getYPixel(taxplot), 1,1);
+		}
+
+		g.drawImage(bf,0,0,null);
+	}
 
 	//Who owns the building at this address?
 	public String getOwner(String address){
@@ -82,9 +144,8 @@ public class PLUTO{
 	//What’s the average [age/height/square footage/land value/total value] of a building within X miles of me? 
 
 	public static void main(String[] args){
-		PLUTO map = new PLUTO("mapnyc/toy.csv");
-		System.out.println(map.quadtree.traversal().toString());
-		System.out.println(map.getOwner("406 EAST 189 STREET"));
+		PLUTO map = new PLUTO("mapnyc/toy.csv","mapnyc/state_plane_nyc.jpg");
+		//System.out.println(TaxPlot.numCorrupted);
 	}
 }
 

@@ -153,21 +153,28 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 		}
 		//if you're at a leaf, crack it open---make a new internalnode, then insert the displaced leaf and new data into it
 		else if (curNode instanceof PointRegionQuadtree.LeafNode){
-			//create a new internal node
-			InternalNode newInternalNode = new InternalNode(prevNode, box);
-			numInternalNodes ++;
-			//temporarily store the old information
+			//check for a "collision". If there is one, don't add the new object.
 			LeafNode oldLeaf = (LeafNode) curNode;
-			//check for a "collision"
 			if (oldLeaf.xcoord ==xcoord && oldLeaf.ycoord==ycoord){
-				System.out.println("the coordinates are already taken!--"+xcoord + ","+ycoord);
+				System.out.println("There is already an object at ("+xcoord + ", "+ycoord+ "). Insertion failed.");
+				return curNode;
 			}
-			// add old object to the new internal node //
-			newInternalNode = (InternalNode) insertHelper(newInternalNode,null,oldLeaf.data,oldLeaf.xcoord,oldLeaf.ycoord,box);
-			// add new object to the new internal node
-			newInternalNode = (InternalNode) insertHelper(newInternalNode,null,object,xcoord,ycoord,box);
+			else {
+				//create a new internal node
+				InternalNode newInternalNode = new InternalNode(prevNode, box);
+				numInternalNodes ++;
+				//temporarily store the old information
+				//check for a "collision"
+				if (oldLeaf.xcoord ==xcoord && oldLeaf.ycoord==ycoord){
+					System.out.println("the coordinates are already taken!--"+xcoord + ","+ycoord);
+				}
+				// add old object to the new internal node //
+				newInternalNode = (InternalNode) insertHelper(newInternalNode,null,oldLeaf.data,oldLeaf.xcoord,oldLeaf.ycoord,box);
+				// add new object to the new internal node
+				newInternalNode = (InternalNode) insertHelper(newInternalNode,null,object,xcoord,ycoord,box);
 
-			return newInternalNode;
+				return newInternalNode;
+			}
 		}
 
 		else{
@@ -292,9 +299,13 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 		test.insert(2,3,3);
 		test.insert(3,2,2);
 		test.insert(4,1,1);
+		test.insert(5,1,1);
+
+		test.insert(7,1,1);
 		
 		ArrayList<Integer> ints = test.traversal();
-		System.out.println(test.get(3,3.1));
+		System.out.println(ints.toString());
+		//System.out.println(test.get(3,3.1));
 
 	}	
 }
