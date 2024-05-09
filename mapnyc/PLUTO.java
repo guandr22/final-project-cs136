@@ -126,13 +126,43 @@ public class PLUTO extends JFrame{
 		g.drawImage(bf,0,0,null);
 	}
 
+
+	/** PLANNING - ANDREW
+	 * Won't be able to lift functions from the Quadtree wholesale - two options
+	 * 	1. create another tree of stuff that fits just this landUseValue and search through that, lifting the Quadtree function
+	 *  2. modify Wyatt's closestObject function here to only add leaves where the data's landUseValue matches up.
+	 * 		the second option probably makes the most sense in terms of space and time tradeoffs --> maybe do this adjustment by adding 
+	 * 		another function in PointRegionQuadtree.java.
+	 */
+
 	//What is the nearest [park/vacant lot/multi-family walk-up building]?
-	public String nearest(double xcoord, double ycoord, String userInput){
+	// Andrew's, based on Wyatt's implementation of closestObject.
+	// Should return the name of the lot and its distance from our point.
+	public String nearest(double xcoord, double ycoord, int landUseValue){
+		// Possibility of type being part of a user input from the prompt --> would require some kind of hashtable later on to map each 
+		// user input (I'm guessing we're going to have users look for parking spaces, not land use value 10) to a land use value.
+		// TaxPlot plotResult = nearestHelper(xcoord, ycoord, landUseValue);
 		return "";
 	}
 
+	// public TaxPlot nearestHelper(double xcoord, double ycoord, int landUseValue){
+	// 	//searchNode is the node under which you check every point
+	// 	Node searchNode = quadtree.getHelper(quadtree.root, null, xcoord, ycoord);
+	// 	//If searchNode is a leaf, return that leaf's data
+	// 	if (searchNode instanceof PointRegionQuadtree.LeafNode){
+	// 		LeafNode leaf = (LeafNode) searchNode;
+	// 		if (leaf.data.landuse == landUseValue){
+	// 			return leaf.data;
+	// 		}
+	// 	}
+	// }
+
 	/*What is the nearest building owned by a person or corporation (same thing, really)
 	whose name includes the characters [for example, "Gates" or "Apple" or "City of New York"]?*/
+	public String ownerOfNearest(double xcoord, double ycoord, String owner){
+		// Type will be provided by Type
+		return "";
+	}
 	 
 
 
