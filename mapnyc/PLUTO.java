@@ -25,7 +25,7 @@ public class PLUTO extends JFrame{
 	public final int AGE =6;
 	public final int FLOORS =7;
 
-	public final static int NUM_TAXPLOTS=2000000;
+	public final static int NUM_TAXPLOTS=1000000;
 
 	public double WITHIN_DISTANCE_RADIUS;
 
@@ -152,7 +152,7 @@ public class PLUTO extends JFrame{
 			}
 			//draw a green oval for the YOU ARE HERE
 			g2.setPaint(Color.GREEN);
-			g2.fillOval(mouseX-5,mouseY-5,10,10);
+			g2.fillOval(mouseX,mouseY,10,10);
 		}
 		else if (MODE == NEAREST_MODE){
 
@@ -173,9 +173,10 @@ public class PLUTO extends JFrame{
 			// }
 			//draw a green oval for the YOU ARE HERE
 			g2.setPaint(Color.GREEN);
-			TaxPlot nearestTaxplot = quadtree.closestObject(getXCoordFromPixel(mouseX),getYCoordFromPixel(mouseY),2); // nearest(mouseX, mouseY, 2);
+			g2.fillOval(mouseX,mouseY,10,10);
+			TaxPlot nearestTaxplot = quadtree.closestObject(getXCoordFromPixel(mouseX),getYCoordFromPixel(mouseY),2);
+			g2.setPaint(Color.RED);
 			g2.fillOval(getXPixel(nearestTaxplot),getYPixel(nearestTaxplot),10,10);
-			g2.fillOval(mouseX,mouseY,5,5);
 		}
 
 		else if (MODE == MAP_MODE){

@@ -351,22 +351,31 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 			}
 			searchNode = (InternalNode) searchNode.parent;
 		}
-		//leafNodes is the list of all leafNodes below the searchNode
-		ArrayList<LeafNode> leafNodes = new ArrayList<LeafNode>();
-		traversalHelper(searchNode, leafNodes);
 
 		//make an arrayList of outputs. Then add the data of every leaf below searchNode that is within the radius.
 		ArrayList<Item> output = new ArrayList<Item>();
+		withinDistanceHelper(searchNode,output,xcoord,ycoord,radius);
 
-		for (LeafNode leaf: leafNodes){
+		//return that list
+		return output;
+	}
+
+	public void withinDistanceHelper(Node curNode, ArrayList<Item> output, double xcoord, double ycoord, double radius){
+		if (curNode instanceof PointRegionQuadtree.LeafNode){
+			LeafNode leaf = (LeafNode) curNode;
 			double dist = Math.hypot(xcoord-leaf.xcoord, ycoord-leaf.ycoord);
 			if (dist <= radius){
 				output.add(leaf.data);
 			}
 		}
-
-		//return that list
-		return output;
+		//if we're at an internal node, call the helper on all children nodes
+		else if (curNode instanceof PointRegionQuadtree.InternalNode){
+			InternalNode cell = (InternalNode) curNode;		
+			withinDistanceHelper(cell.upperLeft,output,xcoord,ycoord,radius);
+			withinDistanceHelper(cell.upperRight,output,xcoord,ycoord,radius);
+			withinDistanceHelper(cell.lowerLeft,output,xcoord,ycoord,radius);
+			withinDistanceHelper(cell.lowerRight,output,xcoord,ycoord,radius);
+		}
 	}
 
 	// Returns an ArrayList of all the objects in the tree
