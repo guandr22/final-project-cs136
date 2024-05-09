@@ -234,6 +234,7 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 			removeHelper(cell.lowerRight, object);
 		}
 	}
+	
 
 	// Returns the object at a given location if one exists. Otherwise, returns null
 	// - Wyatt's
@@ -344,8 +345,8 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 			// The approximation behind this logic is:
 			// if the width and height of the box you are searching is greater than the radius*2 = diameter,
 			// there is a good chance any object within that radius will also be within the box
-			if (searchNode.box.width > radius*2 && searchNode.box.height > radius*2){
-				System.out.println(searchNode.box.width + " " + searchNode.box.height + ", radius:" + radius);
+			if (searchNode.box.width > 2*radius && searchNode.box.height > 2*radius){
+				//System.out.println(searchNode.box.width + " " + searchNode.box.height + ", radius:" + radius);
 				break;
 			}
 			searchNode = (InternalNode) searchNode.parent;
@@ -398,6 +399,8 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 	}
 
 	public static void main(String[] args){
+
+
 		PointRegionQuadtree test = new PointRegionQuadtree<Integer>(0.0,5.0,0.0,16.0);
 		assert test.isEmpty() == true;
 		test.insert(0,5.0,5.0);
