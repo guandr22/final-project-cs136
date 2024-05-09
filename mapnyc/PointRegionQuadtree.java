@@ -120,7 +120,7 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 	public boolean insert(Item object, double xcoord, double ycoord){
 		//root.upperLeft = new InternalNode(0,10,0,5);
 		if (!root.box.inBox(xcoord,ycoord)){
-			System.out.println("("+xcoord +", " + ycoord +")"+" not in region");
+			//System.out.println("("+xcoord +", " + ycoord +")"+" not in region");
 			return false;
 		}
 		root = (InternalNode) insertHelper((Node) root, null, object, xcoord, ycoord,root.box);
@@ -285,6 +285,10 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 	// The exhaustiveness represents each additional box above the box in which the coordinates are that you check
 	// - Wyatt's
 	public Item closestObject(double xcoord, double ycoord, int exhaustiveness){
+		if (!root.box.inBox(xcoord,ycoord)){
+			System.out.println("coords not in window");
+			return null;
+		}
 		//searchNode is the node under which you check every point
 		Node searchNode = getHelper(this.root, null, xcoord, ycoord);
 		//If searchNode is a leaf, return that leaf's data
@@ -322,6 +326,10 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 	// Returns an ArrayList of all objects within a given distance from a location.
 	// - Wyatt's
 	public ArrayList<Item> withinDistance(double xcoord, double ycoord, double radius){
+		if (!root.box.inBox(xcoord,ycoord)){
+			System.out.println("coords not in window");
+			return null;
+		}
 		//Find the node either at the coordinates, or that bounds the coordinates
 		Node getHelped = getHelper(this.root, null, xcoord, ycoord);
 		//If that node is a leafNode, go up to its parent
@@ -334,9 +342,9 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 		//Move searchNode up the tree until you hit a boundingBox that has a width/height > radius
 		while (searchNode.parent != null){
 			// The approximation behind this logic is:
-			// if the width and height of the box you are searching is greater than the radius,
+			// if the width and height of the box you are searching is greater than the radius*2 = diameter,
 			// there is a good chance any object within that radius will also be within the box
-			if (searchNode.box.width > radius && searchNode.box.height > radius){
+			if (searchNode.box.width > radius*2 && searchNode.box.height > radius*2){
 				System.out.println(searchNode.box.width + " " + searchNode.box.height + ", radius:" + radius);
 				break;
 			}

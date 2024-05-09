@@ -9,8 +9,19 @@ import java.awt.Graphics2D;
 import javax.swing.JFrame;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 
 public class PLUTO extends JFrame{
+	public int MODE=1;
+	public final int WITHIN_DISTANCE_MODE =0;
+	public final int NEAREST_MODE =1;
+	public final int MONEYMAP_MODE =2;
+	public final int OLDMAP_MODE =3;
+	public final int FLOORSMAP_MODE =4;
+
+	public final static int NUM_TAXPLOTS=200000;
 
 	public ArrayList<TaxPlot> taxplots; //used to iterate through once, find the max and min xs and ys, in order to set up quadtree
 	public Hashtable<String, TaxPlot> symbolTable; // address ---> taxplot
@@ -19,6 +30,7 @@ public class PLUTO extends JFrame{
 	public final int WINDOW_WIDTH, WINDOW_HEIGHT;
 	public BufferedImage bf;
 	public BufferedImage nycJPG;
+	public int mouseX, mouseY;
 
 	//I used Liberty Island and U Thant Island as set points to calculate this these constants
 	//I used screenshots to figure out their pixel position, and their coordinates are included in pluto.csv
@@ -28,35 +40,8 @@ public class PLUTO extends JFrame{
 	public final double BOTTOMLEFT_YCOORD = 113704.226;
 
 	public PLUTO(String filename, String jpgfilename){
-		taxplots = new ArrayList<TaxPlot>();
-		symbolTable = new Hashtable<>();
-		File file = new File(filename); 
-		try{
-            Scanner scanner = new Scanner(file);
-            scanner.nextLine(); //skip the first line of data labels
-            int numTaxPlots = 10000000;
-            while (scanner.hasNextLine() && numTaxPlots >=0) {
-        		String line = scanner.nextLine();
-        		TaxPlot nextTaxplot = new TaxPlot(line);
-        		if (!nextTaxplot.corruptedData){
-        			taxplots.add(nextTaxplot);
-        		}
-        		numTaxPlots --;
-        	}
-        } catch (FileNotFoundException e) {
-            System.out.println("File not found: " + e.getMessage());
-        }
-
-        //iterate through to find max/min x and y, in order to set boundaries
-        setRegion();
-
-        quadtree = new PointRegionQuadtree<TaxPlot>(region);
-        //iterate through points in order to insert into symbol table and quadtree
-        for (TaxPlot taxplot: taxplots){
-        	symbolTable.put(taxplot.address, taxplot);
-        	quadtree.insert(taxplot, taxplot.xcoord, taxplot.ycoord);
-        }
-
+		mouseX = -1;
+		mouseY = -1;
         //set up jpg
         File jpgFile = new File(jpgfilename);
         try{
@@ -68,36 +53,51 @@ public class PLUTO extends JFrame{
         WINDOW_WIDTH = nycJPG.getWidth();
         WINDOW_HEIGHT = nycJPG.getHeight();
 
+		setRegion();
+		//initialize data structures
+		taxplots = new ArrayList<TaxPlot>();
+		symbolTable = new Hashtable<>();
+		quadtree = new PointRegionQuadtree<TaxPlot>(region);
+
+		//scan data into the data structures
+		File file = new File(filename); 
+		try{
+            Scanner scanner = new Scanner(file);
+            scanner.nextLine(); //skip the first line of data labels
+            int numTaxPlots = NUM_TAXPLOTS;
+            while (scanner.hasNextLine() && numTaxPlots>=0) {
+        		String line = scanner.nextLine();
+        		TaxPlot nextTaxplot = new TaxPlot(line);
+        		if (!nextTaxplot.corruptedData){//} && region.inBox(nextTaxplot.xcoord,nextTaxplot.ycoord)){
+        			taxplots.add(nextTaxplot);
+        			quadtree.insert(nextTaxplot,nextTaxplot.xcoord,nextTaxplot.ycoord);
+        			symbolTable.put(nextTaxplot.address, nextTaxplot);
+        		}
+        		numTaxPlots --;
+        	}
+        } catch (FileNotFoundException e) {
+            System.out.println("File not found: " + e.getMessage());
+        }
+
+        // Open window!
         bf = new BufferedImage(WINDOW_WIDTH,WINDOW_HEIGHT, BufferedImage.TYPE_INT_RGB);
-        //jframe = new JFrame("mapnyc");
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setSize(WINDOW_WIDTH,WINDOW_HEIGHT);
 		this.setVisible(true);
-		System.out.println(taxplots.get(0).toStringExhaustive());
+
+		// Mouse listener (from LAB 2)
+		MapMouseListener listener = new MapMouseListener();
+		addMouseListener(listener);
+		addMouseMotionListener(listener);
+
+
 	}
 	public void setRegion(){
-		//necessary to set defaults to numbers in the range, not 0s or +-infinities, otherwise it's not "centered"
-		double minX = taxplots.get(0).xcoord;
-		double maxX = taxplots.get(0).xcoord;
-		double minY = taxplots.get(0).ycoord;
-		double maxY = taxplots.get(0).ycoord;
-
-		for (TaxPlot taxplot: taxplots){
-			if (taxplot.xcoord<minX){
-				minX = taxplot.xcoord;
-			}
-			else if (taxplot.xcoord>maxX){
-				maxX = taxplot.xcoord;
-			}
-			if (taxplot.ycoord<minY){
-				minY = taxplot.ycoord;
-			}
-			else if (taxplot.ycoord>maxY){
-				maxY = taxplot.ycoord;
-			}
-		}
+		double minX = BOTTOMLEFT_XCOORD;
+		double maxX = BOTTOMLEFT_XCOORD + (WINDOW_WIDTH/PIXELS_TO_COORDS_RATIO);
+		double minY = BOTTOMLEFT_YCOORD;
+		double maxY = BOTTOMLEFT_YCOORD + (WINDOW_HEIGHT/PIXELS_TO_COORDS_RATIO);
 		region = new BoundingBox(minX,maxX,minY,maxY);
-		//System.out.println(region.toString());
 	}
 
 	//What is the nearest [park/vacant lot/multi-family walk-up building]?
@@ -106,12 +106,20 @@ public class PLUTO extends JFrame{
 	whose name includes the characters [for example, "Gates" or "Apple" or "City of New York"]?*/
 
 
-	//getXPixel and getYPixel make use of the 
+	//getXPixel and getYPixel given a taxplots coordinates. Don't forget that (0,0) is the top left!
 	public int getXPixel(TaxPlot taxplot){
 		return (int)((taxplot.xcoord - BOTTOMLEFT_XCOORD) * PIXELS_TO_COORDS_RATIO);
 	}
 	public int getYPixel(TaxPlot taxplot){
 		return WINDOW_HEIGHT - (int)((taxplot.ycoord - BOTTOMLEFT_YCOORD) * PIXELS_TO_COORDS_RATIO);
+	}
+
+	//get coordinates given an X and Y pixel
+	 public double getXCoordFromPixel(int xPixel){
+		return (xPixel / PIXELS_TO_COORDS_RATIO) + BOTTOMLEFT_XCOORD;
+	}
+	public double getYCoordFromPixel(int yPixel){
+		return ((WINDOW_HEIGHT - yPixel)/PIXELS_TO_COORDS_RATIO) + BOTTOMLEFT_YCOORD;
 	}
 
 	public void paint(Graphics g){
@@ -122,11 +130,96 @@ public class PLUTO extends JFrame{
 		}
 		catch (Exception e){}
 
-		g2.setPaint(Color.RED);
 
-		//Put a pixel of red for each taxplot
-		for (TaxPlot taxplot: taxplots){
-			g2.fillRect(getXPixel(taxplot), getYPixel(taxplot), 1,1);
+		if (MODE == WITHIN_DISTANCE_MODE){
+			ArrayList<TaxPlot> taxplotsWithinDistance = quadtree.withinDistance(getXCoordFromPixel(mouseX),getYCoordFromPixel(mouseY),10000);
+			// //Put a pixel of red for each taxplot
+			for (TaxPlot taxplot: taxplots){
+				if (taxplotsWithinDistance.contains(taxplot)){
+					g2.setPaint(Color.RED);
+				}
+				else{
+					g2.setPaint(Color.BLUE);
+				}
+				g2.fillRect(getXPixel(taxplot), getYPixel(taxplot), 1,1);
+			}
+			//draw a green oval for the YOU ARE HERE
+			g2.setPaint(Color.GREEN);
+			g2.fillOval(mouseX-5,mouseY-5,10,10);
+		}
+		else if (MODE == NEAREST_MODE){
+			PointRegionQuadtree<TaxPlot> tempQuadtree = new PointRegionQuadtree<TaxPlot>(region);
+			for (TaxPlot taxplot: taxplots){
+				tempQuadtree.insert(taxplot,taxplot.xcoord,taxplot.ycoord);
+			}
+			TaxPlot curTaxplot = null;
+			while (true){
+				curTaxplot = tempQuadtree.closestObject(getXCoordFromPixel(mouseX),getYCoordFromPixel(mouseY),2);
+				if (curTaxplot.landuse == TaxPlot.VACANT_LOT){
+					break;
+				}
+				else{
+					tempQuadtree.remove(curTaxplot);
+				}
+			}
+			//draw a green oval for the YOU ARE HERE
+			g2.setPaint(Color.GREEN);
+			g2.fillOval(getXPixel(curTaxplot),getYPixel(curTaxplot),10,10);
+			System.out.println("The nearest vacant lot is:" + curTaxplot.toString());
+			g2.fillOval(mouseX-5,mouseY-5,10,10);
+		}
+
+		else if (MODE == MONEYMAP_MODE){
+			for (TaxPlot taxplot: taxplots){
+				double price = taxplot.assessedTotalValue;
+				double capPrice = 2000000;
+				if (price >capPrice){
+					price = capPrice;
+				}
+				int red = (int)((price/capPrice) * 254);
+				Color priceColor = new Color(red,255-red, 0);
+				g2.setPaint(priceColor);
+				g2.fillRect(getXPixel(taxplot), getYPixel(taxplot), 1,1);
+			}
+		}
+		else if (MODE == OLDMAP_MODE){
+			for (TaxPlot taxplot: taxplots){
+				if (taxplot.yearBuilt == -1){
+					continue;
+				}
+				double age = 2024 - taxplot.yearBuilt;
+
+				double capAge = 300;
+				if (age >capAge){
+					age = capAge;
+				}
+
+				int green = (int)((age/capAge) * 254);
+
+				Color ageColor = new Color(0,green, 0);
+				g2.setPaint(ageColor);
+				g2.fillRect(getXPixel(taxplot), getYPixel(taxplot), 1,1);
+			}
+		}
+
+		else if (MODE == FLOORSMAP_MODE){
+			for (TaxPlot taxplot: taxplots){
+				if (taxplot.numFloors == -1){
+					continue;
+				}
+				double floors = taxplot.numFloors;
+
+				double capFloors = 10;
+				if (floors >capFloors){
+					floors = capFloors;
+				}
+
+				int blue = (int)((floors/capFloors) * 254);
+
+				Color floorsColor = new Color(0,0, blue);
+				g2.setPaint(floorsColor);
+				g2.fillRect(getXPixel(taxplot), getYPixel(taxplot), 1,1);
+			}
 		}
 
 		g.drawImage(bf,0,0,null);
@@ -144,8 +237,23 @@ public class PLUTO extends JFrame{
 
 	//What’s the average [age/height/square footage/land value/total value] of a building within X miles of me? 
 
+	private class MapMouseListener implements MouseListener, MouseMotionListener {
+		public void mousePressed(MouseEvent event) {
+			mouseX = event.getX();
+			mouseY = event.getY();
+			//System.out.println(newX);
+			repaint();
+		}
+		public void mouseReleased(MouseEvent event) {}
+		public void mouseDragged(MouseEvent event){}
+		public void mouseClicked(MouseEvent event) {}
+		public void mouseEntered(MouseEvent event) {}
+		public void mouseExited(MouseEvent event) {}
+		public void mouseMoved(MouseEvent event) {}
+	}
 	public static void main(String[] args){
 		PLUTO map = new PLUTO("mapnyc/pluto_24v1_1.csv","mapnyc/state_plane_nyc.jpg");
+		//System.out
 	}
 }
 
