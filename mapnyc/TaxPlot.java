@@ -15,6 +15,19 @@ public class TaxPlot{
 	public double lotArea; //36
 	public boolean corruptedData = false;
 
+	public static final int ONE_TWO_FAMILY_WALK_UP = 1;
+	public static final int MULTI_FAMILY_WALK_UP = 2;
+	public static final int MULTI_FAMILY_ELEVATOR = 3;
+	public static final int MIXED_RESIDENTIAL_COMMERCIAL = 4;
+	public static final int COMMERCIAL_OFFICE = 5;	
+	public static final int INDUSTRIAL_MANUFACTURING = 6;
+	public static final int TRANSPORTATION_UTILITY = 7;
+	public static final int PUBLIC_FACILITIES_INSTITUTIONS = 8;
+	public static final int OPEN_SPACE_OUTDOOR_RECREATION = 9;
+	public static final int PARKING_FACILITIES = 10;
+	public static final int VACANT_LOT = 11;
+
+
 	public TaxPlot(String lineOfData){
 		//There are two issues with the data. First, some names have commas
 		//Usually this takes the form of "FIRST, LAST" so I tried temporarily excising ", " before splitting
@@ -82,7 +95,7 @@ public class TaxPlot{
 	}
 
 	public String toString(){
-		return address + ": (" + xcoord + ", " + ycoord+")";
+		return ownerName + "'s" + address + ": (" + xcoord + ", " + ycoord+")";
 	}
 	public String toStringExhaustive(){
 		return "address: "+ address + ": (" + xcoord + ", " + ycoord+")" + " ownerName: " 
