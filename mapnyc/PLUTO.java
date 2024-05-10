@@ -223,15 +223,6 @@ public class PLUTO extends JFrame{
 		g.drawImage(bf,0,0,null);
 	}
 
-
-	/** PLANNING - ANDREW
-	 * Won't be able to lift functions from the Quadtree wholesale - two options
-	 * 	1. create another tree of stuff that fits just this landUseValue and search through that, lifting the Quadtree function
-	 *  2. modify Wyatt's closestObject function here to only add leaves where the data's landUseValue matches up.
-	 * 		the second option probably makes the most sense in terms of space and time tradeoffs --> maybe do this adjustment by adding 
-	 * 		another function in PointRegionQuadtree.java.
-	 */
-
 	/** Because closestObject() was designed with abstract Objects in mind rather than specific TaxPlots, implementing nearest() 
 	 * presented a problem: how do we look for a specific type of TaxPlot when PointRegionQuadtree's closestObject() method
 	 * can't process specific TaxPlot data?
@@ -245,20 +236,20 @@ public class PLUTO extends JFrame{
 	 */
 	
 
-	//What is the nearest [park/vacant lot/multi-family walk-up building]?
-	// Should return the name of the lot and its distance from our point.
+	// What is the nearest [park/vacant lot/multi-family walk-up building]?
+	// Should return the lot's address and its distance from our point.
 	public String nearest(double xcoord, double ycoord, int landUseValue){
 		// Possibility of type being part of a user input from the prompt --> would require some kind of hashtable later on to map each 
 		// user input (I'm guessing we're going to have users look for parking spaces, not land use value 10) to a land use value.
-		// TaxPlot plotResult = nearestHelper(xcoord, ycoord, landUseValue);
-		return "";
+		TaxPlot plotResult = nearestHelper(xcoord, ycoord, landUseValue, 3);
+		return plotResult.address + ", ";
 	}
 
 	// Andrew's, based on Wyatt's implementation of closestObject.
-	public TaxPlot nearestHelper(double xcoord, double ycoord, int landUseValue){
+	public TaxPlot nearestHelper(double xcoord, double ycoord, int landUseValue, int exhaustiveness){
 
 		// Internal Classes of PointRegionQuadtree like Node and LeafNode need some additional help in order to function properly
-		// in PLUTO.java
+		// in PLUTO.java.
 
 		if (!quadtree.root.box.inBox(xcoord,ycoord)){
 			System.out.println("coords not in window");
@@ -277,7 +268,29 @@ public class PLUTO extends JFrame{
 				}
 			}
 		}
-		return null;
+
+		//Move searchNode up the tree a number of levels equal to the exhaustiveness of the search
+		while (exhaustiveness>0 && searchNode.parent != null){
+			exhaustiveness --;
+			searchNode = searchNode.parent;
+		}
+
+		//leafNodes is the list of all leafNodes below the searchNode
+		ArrayList<PointRegionQuadtree<TaxPlot>.LeafNode> leafNodes = new ArrayList<PointRegionQuadtree<TaxPlot>.LeafNode>();
+		quadtree.traversalHelper(searchNode, leafNodes);
+
+		//For each leafNode, calculate the distance to (xcoord,ycoord), in order to find the minimum distance
+		double minDistance = Double.POSITIVE_INFINITY;
+		PointRegionQuadtree<TaxPlot>.LeafNode closestNode = null;
+		for (PointRegionQuadtree<TaxPlot>.LeafNode leaf: leafNodes){
+			double dist = Math.hypot(xcoord-leaf.xcoord, ycoord-leaf.ycoord);
+			if (dist < minDistance){
+				closestNode = leaf;
+				minDistance = dist;
+			}
+		}
+
+		return (TaxPlot) closestNode.data;
 	}
 
 	/*What is the nearest building owned by a person or corporation (same thing, really)
@@ -289,17 +302,17 @@ public class PLUTO extends JFrame{
 	 
 
 
-	//Who owns the building at this address?
+	// Who owns the building at this address?
 	public String getOwner(String address){
 		return symbolTable.get(address).ownerName;
 	}
 
-	//What’s the [oldest/tallest/most spacious/highest land value/highest total value] building within X miles of me?
+	// What’s the [oldest/tallest/most spacious/highest land value/highest total value] building within X miles of me?
 	public TaxPlot most(double maxDistance){
 		return null;
 	}
 
-	//What’s the average [age/height/square footage/land value/total value] of a building within X miles of me? 
+	// What’s the average [age/height/square footage/land value/total value] of a building within X miles of me? 
 
 	private class MapMouseListener implements MouseListener, MouseMotionListener {
 		public void mousePressed(MouseEvent event) {
@@ -317,7 +330,11 @@ public class PLUTO extends JFrame{
 	}
 
 	public static void main(String[] args){
-		
+
+		// Tests
+
+
+		// Actual main function for demo.
 		PLUTO map = new PLUTO("mapnyc/pluto_24v1_1.csv","mapnyc/state_plane_nyc.jpg");
 		//https://www.geeksforgeeks.org/ways-to-read-input-from-console-in-java/
 		Scanner scanner = new Scanner(System.in);
