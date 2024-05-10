@@ -102,7 +102,7 @@ public class PLUTO extends JFrame{
 
 	//getXPixel and getYPixel make use of the 
 	//getXPixel and getYPixel given a taxplots coordinates. Don't forget that (0,0) is the top left!
-	
+
 	public int getXPixel(TaxPlot taxplot){
 		return (int)((taxplot.xcoord - BOTTOMLEFT_XCOORD) * PIXELS_TO_COORDS_RATIO);
 	}
@@ -230,8 +230,20 @@ public class PLUTO extends JFrame{
 	 * 		another function in PointRegionQuadtree.java.
 	 */
 
+	/** Because closestObject() was designed with abstract Objects in mind rather than specific TaxPlots, implementing nearest() 
+	 * presented a problem: how do we look for a specific type of TaxPlot when PointRegionQuadtree's closestObject() method
+	 * can't process specific TaxPlot data?
+	 * We had two options: 
+	 * 1. Use a function which creates an empty quadtree, iterates through this.quadtree and adds to the empty quadtree only those 
+	 * elements which matched the desired type of TaxPlot, then calls closestObject() on the new quadtree.
+	 * 2. Adapt the underlying code behind closestObject() to work with TaxPlot's landuse instance variable.
+	 * 
+	 * The first choice would have been significantly easier to implement, but we decided on the second choice because the first choice was
+	 * so memory and space-intensive.
+	 */
+	
+
 	//What is the nearest [park/vacant lot/multi-family walk-up building]?
-	// Andrew's, based on Wyatt's implementation of closestObject.
 	// Should return the name of the lot and its distance from our point.
 	public String nearest(double xcoord, double ycoord, int landUseValue){
 		// Possibility of type being part of a user input from the prompt --> would require some kind of hashtable later on to map each 
@@ -240,17 +252,31 @@ public class PLUTO extends JFrame{
 		return "";
 	}
 
-	// public TaxPlot nearestHelper(double xcoord, double ycoord, int landUseValue){
-	// 	//searchNode is the node under which you check every point
-	// 	Node searchNode = quadtree.getHelper(quadtree.root, null, xcoord, ycoord);
-	// 	//If searchNode is a leaf, return that leaf's data
-	// 	if (searchNode instanceof PointRegionQuadtree.LeafNode){
-	// 		LeafNode leaf = (LeafNode) searchNode;
-	// 		if (leaf.data.landuse == landUseValue){
-	// 			return leaf.data;
-	// 		}
-	// 	}
-	// }
+	// Andrew's, based on Wyatt's implementation of closestObject.
+	public TaxPlot nearestHelper(double xcoord, double ycoord, int landUseValue){
+
+		// Internal Classes of PointRegionQuadtree like Node and LeafNode need some additional help in order to function properly
+		// in PLUTO.java
+
+		if (!quadtree.root.box.inBox(xcoord,ycoord)){
+			System.out.println("coords not in window");
+			return null;
+		}
+
+		//searchNode is the node under which you check every point
+		PointRegionQuadtree.Node searchNode = quadtree.getHelper(quadtree.root, null, xcoord, ycoord);
+		//If searchNode is a leaf, return that leaf's data
+		if (searchNode instanceof PointRegionQuadtree.LeafNode){
+			PointRegionQuadtree.LeafNode leaf = (PointRegionQuadtree.LeafNode) searchNode;
+			if (leaf.data instanceof TaxPlot){
+				TaxPlot candidatePlot = (TaxPlot) leaf.data;
+				if (candidatePlot.landuse == landUseValue){
+					return candidatePlot;
+				}
+			}
+		}
+		return null;
+	}
 
 	/*What is the nearest building owned by a person or corporation (same thing, really)
 	whose name includes the characters [for example, "Gates" or "Apple" or "City of New York"]?*/
