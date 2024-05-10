@@ -41,18 +41,28 @@ public class PLUTO extends JFrame{
 	//Wyatt used Liberty Island and U Thant Island as set points to calculate these constants.
 	/** 
 	 * Wyatt used screenshots to figure out their pixel position, and their x and y coordinates (based on 
-	 * the New York-Long Island State Plane coordinate system) are included in pluto.csv in columns BX and BY.
+	 * the New York-Long Island State Plane coordinate system) are included in pluto_24v1_1.csv in columns BX and BY.
 	 * 
 	 * To figure out a rough ratio between coordinates and miles, Andrew plugged WGS84 latitude and longitude values,
-	 * found in columns CL and CM of pluto.csv, into https://www.omnicalculator.com/other/latitude-longitude-distance 
+	 * found in columns CL and CM of pluto_24v1_1.csv, into https://www.omnicalculator.com/other/latitude-longitude-distance 
 	 * to calculate the rough distance in statute miles between Liberty and U Thant Islands (these are rows 131751 and 
-	 * 838380, respectively).
+	 * 838380, respectively, in the csv).
 	 * Then, he used the Pythagorean Theorem (this is sketchy, given the curvature of the Earth, but the distances
 	 * involved should be small enough to avoid too much distortion) to find the difference in NY-LI SP coordinates between
 	 * Liberty and U Thant islands in order to calculate a coordinate-to-mile ratio.
+	 * The taxplots for Liberty and U Thant islands are 5.751 statute miles or 30398.80861 NY-LI SP coordinate units apart,
+	 * giving the map a coordinate-to-mile ratio of 5285.83004869, making one coordinate unit (at least close to Liberty and
+	 * U Thant islands) a little smaller than a foot.
+	 * 
+	 * All that said, please keep in mind that these are rough approximations (you probably wouldn't want to use these for a cross-country 
+	 * trip) but that these should be close enough to be practically useful within the bounds of New York City, though they will become
+	 * a bit more distorted the farther you go from the center of the city.
 	*/
-	public final double PIXELS_TO_COORDS_RATIO = 1/270.3317839;
-	public final double COORDS_TO_MILES_RATIO = 0;
+	public final double PIXELS_TO_COORDS_RATIO = 1/270.3317839; 
+	public final double COORDS_TO_MILES_RATIO = 5285.83004869;
+
+	public final double MILES_TO_COORDS_RATIO = 1/COORDS_TO_MILES_RATIO;
+	public final double COORDS_TO_PIXELS_RATIO = 1/PIXELS_TO_COORDS_RATIO;
 
 	//the BOTTOMLEFT_XCOORD and BOTTOMLEFT_YCOORD are the x and y cordinates cooresponding to the bottom left of the window.
 	public final double BOTTOMLEFT_XCOORD = 895306.8989;
@@ -119,8 +129,7 @@ public class PLUTO extends JFrame{
 		region = new BoundingBox(minX,maxX,minY,maxY);
 	}
 
-	//getXPixel and getYPixel make use of the 
-	//getXPixel and getYPixel given a taxplots coordinates. Don't forget that (0,0) is the top left!
+	//getXPixel and getYPixel given a taxplot's coordinates. Don't forget that (0,0) is the top left!
 
 	public int getXPixel(TaxPlot taxplot){
 		return (int)((taxplot.xcoord - BOTTOMLEFT_XCOORD) * PIXELS_TO_COORDS_RATIO);
@@ -255,7 +264,26 @@ public class PLUTO extends JFrame{
 		// Possibility of type being part of a user input from the prompt --> would require some kind of hashtable later on to map each 
 		// user input (I'm guessing we're going to have users look for parking spaces, not land use value 10) to a land use value.
 		TaxPlot plotResult = nearestHelper(xcoord, ycoord, landUseValue, 3);
-		return plotResult.address + ", ";
+		double dist = distanceHelper(xcoord, ycoord, plotResult.xcoord, plotResult.ycoord);
+
+		// For distances less than 0.2 miles, convert to feet.
+		if (dist < 0.2) {
+			int distFeet = (int) dist*5280;
+			return plotResult.address + " | " + Integer.toString(distFeet) + " feet away.";
+		}
+
+		return plotResult.address + " | " + Double.toString(dist) + " miles away.";
+	}
+
+	// Calculates the Euclidean distance in miles between two points based on their xcoords and ycoords.
+	public double distanceHelper(double point1X, double point1Y, double point2X, double point2Y){
+		double xDist = point1X-point2X;
+		double yDist = point1Y-point2Y;
+
+		double xMiles = xDist/COORDS_TO_MILES_RATIO;
+		double yMiles = yDist/COORDS_TO_MILES_RATIO;
+
+		return Math.hypot(xMiles, yMiles);
 	}
 
 	// Andrew's, based on Wyatt's implementation of closestObject.
@@ -345,6 +373,7 @@ public class PLUTO extends JFrame{
 	public static void main(String[] args){
 
 		// Tests
+		// PLUTO testmap = new PLUTO("mapnyc/toy.csv", "mapnyc/state_plane_nyc.jpg");
 
 
 		// Actual main function for demo.
