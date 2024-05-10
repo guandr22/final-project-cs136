@@ -38,9 +38,22 @@ public class PLUTO extends JFrame{
 	public BufferedImage nycJPG;
 	public int mouseX, mouseY;
 
-	//I used Liberty Island and U Thant Island as set points to calculate this these constants
-	//I used screenshots to figure out their pixel position, and their coordinates are included in pluto.csv
+	//Wyatt used Liberty Island and U Thant Island as set points to calculate these constants.
+	/** 
+	 * Wyatt used screenshots to figure out their pixel position, and their x and y coordinates (based on 
+	 * the New York-Long Island State Plane coordinate system) are included in pluto.csv in columns BX and BY.
+	 * 
+	 * To figure out a rough ratio between coordinates and miles, Andrew plugged WGS84 latitude and longitude values,
+	 * found in columns CL and CM of pluto.csv, into https://www.omnicalculator.com/other/latitude-longitude-distance 
+	 * to calculate the rough distance in statute miles between Liberty and U Thant Islands (these are rows 131751 and 
+	 * 838380, respectively).
+	 * Then, he used the Pythagorean Theorem (this is sketchy, given the curvature of the Earth, but the distances
+	 * involved should be small enough to avoid too much distortion) to find the difference in NY-LI SP coordinates between
+	 * Liberty and U Thant islands in order to calculate a coordinate-to-mile ratio.
+	*/
 	public final double PIXELS_TO_COORDS_RATIO = 1/270.3317839;
+	public final double COORDS_TO_MILES_RATIO = 0;
+
 	//the BOTTOMLEFT_XCOORD and BOTTOMLEFT_YCOORD are the x and y cordinates cooresponding to the bottom left of the window.
 	public final double BOTTOMLEFT_XCOORD = 895306.8989;
 	public final double BOTTOMLEFT_YCOORD = 113704.226;
