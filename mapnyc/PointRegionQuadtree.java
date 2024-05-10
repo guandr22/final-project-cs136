@@ -207,22 +207,40 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 		if (pointer instanceof PointRegionQuadtree.LeafNode){
 			LeafNode leaf = (LeafNode) pointer;
 			if (leaf.data.equals(object)){
+				int numSiblingLeaves = 0;
 				// Replace the leaf with an EmptyNode. Due to Java's class requirements, this requires going to 
 				// the leaf's parent in order to conduct a deletion. 
 				InternalNode parentPointer = (InternalNode) leaf.parent; // All parent nodes in practice should be Internal Nodes
-				if (parentPointer.upperLeft.equals(leaf)) {
-					parentPointer.upperLeft = new EmptyNode(parentPointer);
+				if (parentPointer.upperLeft instanceof PointRegionQuadtree.LeafNode) {
+					if (parentPointer.upperLeft.equals(leaf)){
+						parentPointer.upperLeft = new EmptyNode(parentPointer);
+					}
+					else numSiblingLeaves++;
 				}
-				if (parentPointer.upperRight.equals(leaf)) {
-					parentPointer.upperRight = new EmptyNode(parentPointer);
+				else if (parentPointer.upperRight instanceof PointRegionQuadtree.LeafNode) {
+					if (parentPointer.upperRight.equals(leaf)) {
+						parentPointer.upperRight = new EmptyNode(parentPointer);
+					}
+					else numSiblingLeaves++;
 				}
-				if (parentPointer.lowerLeft.equals(leaf)) {
-					parentPointer.lowerLeft = new EmptyNode(parentPointer);
+				else if (parentPointer.lowerLeft instanceof PointRegionQuadtree.LeafNode) {
+					if (parentPointer.lowerLeft.equals(leaf)) {
+						parentPointer.lowerLeft = new EmptyNode(parentPointer);
+					}
+					else numSiblingLeaves++;
 				}
-				if (parentPointer.lowerRight.equals(leaf)) {
-					parentPointer.lowerRight = new EmptyNode(parentPointer);
+				else if (parentPointer.lowerRight instanceof PointRegionQuadtree.LeafNode) {
+					if (parentPointer.lowerRight.equals(leaf)) {
+						parentPointer.lowerRight = new EmptyNode(parentPointer);
+					}
+					else numSiblingLeaves++;
 				}
 				numLeaves--;
+				// If removing a leaf leaves its parent InternalNode with 1 
+				if (numSiblingLeaves == 1){
+
+				}
+
 			}
 		}
 
