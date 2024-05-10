@@ -206,41 +206,60 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 	public void removeHelper(Node pointer, Item object){
 		if (pointer instanceof PointRegionQuadtree.LeafNode){
 			LeafNode leaf = (LeafNode) pointer;
+
 			if (leaf.data.equals(object)){
-				int numSiblingLeaves = 0;
 				// Replace the leaf with an EmptyNode. Due to Java's class requirements, this requires going to 
 				// the leaf's parent in order to conduct a deletion. 
 				InternalNode parentPointer = (InternalNode) leaf.parent; // All parent nodes in practice should be Internal Nodes
+
+				ArrayList<PointRegionQuadtree<Item>.LeafNode> siblingLeavesArr = new ArrayList<PointRegionQuadtree<Item>.LeafNode>(3);
+
+				// Checks each of the parent's children both to see if the child matches the leaf we want to remove
+				// and for if removing the leaf would result in reducing the parent to having just one leaf child.
 				if (parentPointer.upperLeft instanceof PointRegionQuadtree.LeafNode) {
-					if (parentPointer.upperLeft.equals(leaf)){
+					if (parentPointer.upperLeft.equals(leaf)) {
 						parentPointer.upperLeft = new EmptyNode(parentPointer);
 					}
-					else numSiblingLeaves++;
+					else {
+						LeafNode leafUL = (LeafNode) parentPointer.upperLeft;
+						siblingLeavesArr.add(leafUL);
+					}
 				}
-				else if (parentPointer.upperRight instanceof PointRegionQuadtree.LeafNode) {
+				if (parentPointer.upperRight instanceof PointRegionQuadtree.LeafNode) {
 					if (parentPointer.upperRight.equals(leaf)) {
 						parentPointer.upperRight = new EmptyNode(parentPointer);
 					}
-					else numSiblingLeaves++;
+					else {
+						LeafNode leafUR = (LeafNode) parentPointer.upperRight;
+						siblingLeavesArr.add(leafUR);
+					}
 				}
-				else if (parentPointer.lowerLeft instanceof PointRegionQuadtree.LeafNode) {
+				if (parentPointer.lowerLeft instanceof PointRegionQuadtree.LeafNode) {
 					if (parentPointer.lowerLeft.equals(leaf)) {
 						parentPointer.lowerLeft = new EmptyNode(parentPointer);
 					}
-					else numSiblingLeaves++;
+					else {
+						LeafNode leafLL = (LeafNode) parentPointer.lowerLeft;
+						siblingLeavesArr.add(leafLL);
+					}
 				}
-				else if (parentPointer.lowerRight instanceof PointRegionQuadtree.LeafNode) {
+				if (parentPointer.lowerRight instanceof PointRegionQuadtree.LeafNode) {
 					if (parentPointer.lowerRight.equals(leaf)) {
 						parentPointer.lowerRight = new EmptyNode(parentPointer);
 					}
-					else numSiblingLeaves++;
+					else {
+						LeafNode leafLR = (LeafNode) parentPointer.lowerRight;
+						siblingLeavesArr.add(leafLR);
+					}
 				}
 				numLeaves--;
-				// If removing a leaf leaves its parent InternalNode with 1 
-				if (numSiblingLeaves == 1){
-
+				// If removing a leaf leaves its parent InternalNode with just 1 remaining leaf, then we replace the parent InternalNode
+				// with the remaining leaf.
+				// THIS CURRENTLY DOES NOT FUNCTION -- THE SIZE FUNCTION WORKS PROPERLY, BUT LEAF.PARENT = (LEAFNODE) SIBLINGLEAVESARR JUST 
+				// DOES NOT DO WHAT WE WANT IT TO DO.
+				if (siblingLeavesArr.size() == 1){
+					leaf.parent = (LeafNode) siblingLeavesArr.get(0);
 				}
-
 			}
 		}
 
@@ -436,12 +455,15 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 		test.insert(3,2.0,2.0);
 		test.insert(4,1.0,1.0);
 		test.insert(5,1.0,1.1);
-		assert test.size() == 6;
-		assert test.isEmpty() == false;
-
 
 		System.out.println(test.root.toString());
-		System.out.println(test.withinDistance(1,1.11,1).toString());
+		assert test.size() == 6;
+		assert test.isEmpty() == false;
+		assert test.remove(1) == true;
+		assert test.remove(6) == false;
+
+		System.out.println(test.root.toString());
+		// System.out.println(test.withinDistance(1,1.11,1).toString());
 
 	}	
 }
