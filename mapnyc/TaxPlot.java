@@ -2,17 +2,17 @@ package mapnyc;
 
 public class TaxPlot{
 	// New York-Long Island State Plane coordinate system;
-	public int xcoord; //76
-	public int ycoord; //77
-	public String address; //19
-	public String ownerName; //35
-	public int landuse; //32
-	public double numFloors; //48
-	public int yearBuilt; //63
-	public double assessedLandValue; //60
-	public double assessedTotalValue; //61
-	public double totalBuildingArea; //37
-	public double lotArea; //36
+	public int xcoord; 
+	public int ycoord; 
+	public String address; 
+	public String ownerName; 
+	public int landuse; 
+	public double numFloors;
+	public int yearBuilt; 
+	public double assessedLandValue; 
+	public double assessedTotalValue;
+	public double totalBuildingArea;
+	public double lotArea;
 	public boolean corruptedData = false;
 
 	public static final int ONE_TWO_FAMILY_WALK_UP = 1;

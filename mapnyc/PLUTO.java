@@ -13,15 +13,21 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 
-public class PLUTO extends JFrame{
-	public int MODE=1;
-	public final int WITHIN_DISTANCE_MODE =0;
-	public final int NEAREST_MODE =1;
-	public final int MONEYMAP_MODE =2;
-	public final int OLDMAP_MODE =3;
-	public final int FLOORSMAP_MODE =4;
 
-	public final static int NUM_TAXPLOTS=200000;
+public class PLUTO extends JFrame{
+	public int MODE=-1;
+	public final int WITHIN_DISTANCE_MODE =1;
+	public final int NEAREST_MODE =2;
+	public final int MAP_MODE = 3;
+
+	public int MAP_TYPE = 5;
+	public final int MONEY =5;
+	public final int AGE =6;
+	public final int FLOORS =7;
+
+	public final static int NUM_TAXPLOTS=1000000;
+
+	public double WITHIN_DISTANCE_RADIUS;
 
 	public ArrayList<TaxPlot> taxplots; //used to iterate through once, find the max and min xs and ys, in order to set up quadtree
 	public Hashtable<String, TaxPlot> symbolTable; // address ---> taxplot
@@ -119,6 +125,9 @@ public class PLUTO extends JFrame{
 	}
 
 	public void paint(Graphics g){
+		if (MODE == -1){
+			return;
+		}
 		Graphics2D g2 = (Graphics2D) bf.getGraphics();
 		//Set the jpg of NYC as the background
 		try{
@@ -128,7 +137,9 @@ public class PLUTO extends JFrame{
 
 
 		if (MODE == WITHIN_DISTANCE_MODE){
-			ArrayList<TaxPlot> taxplotsWithinDistance = quadtree.withinDistance(getXCoordFromPixel(mouseX),getYCoordFromPixel(mouseY),10000);
+			ArrayList<TaxPlot> taxplotsWithinDistance = quadtree.withinDistance(getXCoordFromPixel(mouseX),
+																				getYCoordFromPixel(mouseY),
+																				WITHIN_DISTANCE_RADIUS);
 			// //Put a pixel of red for each taxplot
 			for (TaxPlot taxplot: taxplots){
 				if (taxplotsWithinDistance.contains(taxplot)){
@@ -141,79 +152,70 @@ public class PLUTO extends JFrame{
 			}
 			//draw a green oval for the YOU ARE HERE
 			g2.setPaint(Color.GREEN);
-			g2.fillOval(mouseX-5,mouseY-5,10,10);
+			g2.fillOval(mouseX,mouseY,10,10);
 		}
 		else if (MODE == NEAREST_MODE){
-			PointRegionQuadtree<TaxPlot> tempQuadtree = new PointRegionQuadtree<TaxPlot>(region);
-			for (TaxPlot taxplot: taxplots){
-				tempQuadtree.insert(taxplot,taxplot.xcoord,taxplot.ycoord);
-			}
-			TaxPlot curTaxplot = null;
-			while (true){
-				curTaxplot = tempQuadtree.closestObject(getXCoordFromPixel(mouseX),getYCoordFromPixel(mouseY),2);
-				if (curTaxplot.landuse == TaxPlot.VACANT_LOT){
-					break;
-				}
-				else{
-					tempQuadtree.remove(curTaxplot);
-				}
-			}
+
+			// PointRegionQuadtree<TaxPlot> tempQuadtree = new PointRegionQuadtree<TaxPlot>(region);
+			// for (TaxPlot taxplot: taxplots){
+			// 	tempQuadtree.insert(taxplot,taxplot.xcoord,taxplot.ycoord);
+			// }
+
+			// TaxPlot curTaxplot = null;
+			// while (true){
+			// 	curTaxplot = tempQuadtree.closestObject(getXCoordFromPixel(mouseX),getYCoordFromPixel(mouseY),2);
+			// 	if (curTaxplot.landuse == TaxPlot.VACANT_LOT){
+			// 		break;
+			// 	}
+			// 	else{
+			// 		tempQuadtree.remove(curTaxplot);
+			// 	}
+			// }
 			//draw a green oval for the YOU ARE HERE
 			g2.setPaint(Color.GREEN);
-			g2.fillOval(getXPixel(curTaxplot),getYPixel(curTaxplot),10,10);
-			System.out.println("The nearest vacant lot is:" + curTaxplot.toString());
-			g2.fillOval(mouseX-5,mouseY-5,10,10);
+			g2.fillOval(mouseX,mouseY,10,10);
+			TaxPlot nearestTaxplot = quadtree.closestObject(getXCoordFromPixel(mouseX),getYCoordFromPixel(mouseY),2);
+			g2.setPaint(Color.RED);
+			g2.fillOval(getXPixel(nearestTaxplot),getYPixel(nearestTaxplot),10,10);
 		}
 
-		else if (MODE == MONEYMAP_MODE){
+		else if (MODE == MAP_MODE){
+			Color mapColor = new Color(0,0,0);
 			for (TaxPlot taxplot: taxplots){
-				double price = taxplot.assessedTotalValue;
-				double capPrice = 2000000;
-				if (price >capPrice){
-					price = capPrice;
+				if (MAP_TYPE == MONEY){
+					double price = taxplot.assessedTotalValue;
+					double capPrice = 2000000;
+					if (price >capPrice){
+						price = capPrice;
+					}
+					int red = (int)((price/capPrice) * 254);
+					mapColor = new Color(red,0, 0);
 				}
-				int red = (int)((price/capPrice) * 254);
-				Color priceColor = new Color(red,255-red, 0);
-				g2.setPaint(priceColor);
-				g2.fillRect(getXPixel(taxplot), getYPixel(taxplot), 1,1);
-			}
-		}
-		else if (MODE == OLDMAP_MODE){
-			for (TaxPlot taxplot: taxplots){
-				if (taxplot.yearBuilt == -1){
-					continue;
+				else if (MAP_TYPE == AGE){
+					if (taxplot.yearBuilt == -1){
+						continue;
+					}
+					double age = 2024 - taxplot.yearBuilt;
+					double capAge = 300;
+					if (age >capAge){
+						age = capAge;
+					}
+					int green = (int)((age/capAge) * 254);
+					mapColor = new Color(0,green, 0);
 				}
-				double age = 2024 - taxplot.yearBuilt;
-
-				double capAge = 300;
-				if (age >capAge){
-					age = capAge;
+				else if (MAP_TYPE == FLOORS){
+					if (taxplot.numFloors == -1){
+						continue;
+					}
+					double floors = taxplot.numFloors;
+					double capFloors = 10;
+					if (floors >capFloors){
+						floors = capFloors;
+					}
+					int blue = (int)((floors/capFloors) * 254);
+					mapColor = new Color(0,0, blue);
 				}
-
-				int green = (int)((age/capAge) * 254);
-
-				Color ageColor = new Color(0,green, 0);
-				g2.setPaint(ageColor);
-				g2.fillRect(getXPixel(taxplot), getYPixel(taxplot), 1,1);
-			}
-		}
-
-		else if (MODE == FLOORSMAP_MODE){
-			for (TaxPlot taxplot: taxplots){
-				if (taxplot.numFloors == -1){
-					continue;
-				}
-				double floors = taxplot.numFloors;
-
-				double capFloors = 10;
-				if (floors >capFloors){
-					floors = capFloors;
-				}
-
-				int blue = (int)((floors/capFloors) * 254);
-
-				Color floorsColor = new Color(0,0, blue);
-				g2.setPaint(floorsColor);
+				g2.setPaint(mapColor);
 				g2.fillRect(getXPixel(taxplot), getYPixel(taxplot), 1,1);
 			}
 		}
@@ -313,8 +315,34 @@ public class PLUTO extends JFrame{
 		public void mouseExited(MouseEvent event) {}
 		public void mouseMoved(MouseEvent event) {}
 	}
+
 	public static void main(String[] args){
+		
 		PLUTO map = new PLUTO("mapnyc/pluto_24v1_1.csv","mapnyc/state_plane_nyc.jpg");
+		//https://www.geeksforgeeks.org/ways-to-read-input-from-console-in-java/
+		Scanner scanner = new Scanner(System.in);
+		while (true){
+			System.out.println("MapNYC: select mode");
+			System.out.println("1: Within Distance");
+			System.out.println("2: Nearest");
+			System.out.println("3: Generate Map");
+			int modeSelection = Integer.valueOf(scanner.nextLine());
+			map.MODE = Integer.valueOf(modeSelection);
+			if (map.MODE == map.WITHIN_DISTANCE_MODE){
+				System.out.println("Set radius:");
+				int withinDistanceRadius = Integer.valueOf(scanner.nextLine());
+				map.WITHIN_DISTANCE_RADIUS = withinDistanceRadius;
+			}
+			if (map.MODE == map.MAP_MODE){
+				System.out.println("Map generator: select mode");
+				System.out.println("1: Assessed Total Value");
+				System.out.println("2: Year Built");
+				System.out.println("3: Number of Floors");
+				int mapTypeSelection = Integer.valueOf(scanner.nextLine());
+				map.MAP_TYPE = mapTypeSelection +map.MONEY -1;
+			}
+		}
+
 		//System.out
 	}
 }
