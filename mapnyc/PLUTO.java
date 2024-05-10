@@ -266,8 +266,8 @@ public class PLUTO extends JFrame{
 		TaxPlot plotResult = nearestHelper(xcoord, ycoord, landUseValue, 3);
 		double dist = distanceHelper(xcoord, ycoord, plotResult.xcoord, plotResult.ycoord);
 
-		// For distances less than 0.2 miles, convert to feet.
-		if (dist < 0.2) {
+		// For distances less than 0.1 miles, convert to feet.
+		if (dist < 0.1) {
 			int distFeet = (int) dist*5280;
 			return plotResult.address + " | " + Integer.toString(distFeet) + " feet away.";
 		}
