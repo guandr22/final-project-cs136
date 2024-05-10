@@ -207,11 +207,10 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 		if (pointer instanceof PointRegionQuadtree.LeafNode){
 			LeafNode leaf = (LeafNode) pointer;
 
+			// Base Case: Find the leaf containing the object we want to remove.
 			if (leaf.data.equals(object)){
-				// Replace the leaf with an EmptyNode. Due to Java's class requirements, this requires going to 
-				// the leaf's parent in order to conduct a deletion. 
-				InternalNode parentPointer = (InternalNode) leaf.parent; // All parent nodes in practice should be Internal Nodes
 
+				InternalNode parentPointer = (InternalNode) leaf.parent; // All parent nodes in practice should be Internal Nodes
 				ArrayList<PointRegionQuadtree<Item>.LeafNode> siblingLeavesArr = new ArrayList<PointRegionQuadtree<Item>.LeafNode>(3);
 
 				// Checks each of the parent's children both to see if the child matches the leaf we want to remove
@@ -250,15 +249,28 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 					else {
 						LeafNode leafLR = (LeafNode) parentPointer.lowerRight;
 						siblingLeavesArr.add(leafLR);
+						System.out.println(leafLR.parent.parent);
+						System.out.println(parentPointer.parent);
 					}
 				}
 				numLeaves--;
 				// If removing a leaf leaves its parent InternalNode with just 1 remaining leaf, then we replace the parent InternalNode
 				// with the remaining leaf.
+				// Because of the problems of converting a parent InternalNode into a LeafNode, we need to go up one step and go through the
+				// grandparent InternalNode's children to make the conversion. This is deeply frustrating product of implementing LeafNodes
+				// and InternalNodes as separate classes, but at this point, reversing that decision would more or less require scrapping all
+				// of our work.
 				// THIS CURRENTLY DOES NOT FUNCTION -- THE SIZE FUNCTION WORKS PROPERLY, BUT LEAF.PARENT = (LEAFNODE) SIBLINGLEAVESARR JUST 
 				// DOES NOT DO WHAT WE WANT IT TO DO.
 				if (siblingLeavesArr.size() == 1){
-					leaf.parent = (LeafNode) siblingLeavesArr.get(0);
+					parentPointer = new EmptyNode(parentPointer.parent);
+					// (LeafNode) siblingLeavesArr.get(0);
+					// leaf.parent = (LeafNode) siblingLeavesArr.get(0);
+					InternalNode grandparentPointer = (InternalNode) parentPointer.parent;
+
+					// Note to future self: we're going to go through the grandparentPointer's children until we can replace it
+					// with what might end up being a new copy of the leafNode in siblingLeavesArr, just with a different 
+
 				}
 			}
 		}
