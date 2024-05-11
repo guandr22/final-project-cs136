@@ -433,9 +433,9 @@ public class PLUTO extends JFrame{
 		}
 		for (TaxPlot plot : this.taxplots) {
 			if (plot.landuse == landUseOption) {
-				landuseTaxplots.add(plot);
-        		landuseQuadTree.insert(plot,plot.xcoord,plot.ycoord);
-        		landuseSymbolTable.put(plot.address, plot);
+				this.landuseTaxplots.add(plot);
+        		this.landuseQuadTree.insert(plot,plot.xcoord,plot.ycoord);
+        		this.landuseSymbolTable.put(plot.address, plot);
 			}
 		}
 	}
@@ -448,9 +448,9 @@ public class PLUTO extends JFrame{
 	public void mapOwner(String ownerInput){
 		for (TaxPlot plot : this.taxplots) {
 			if (plot.ownerName.contains(ownerInput)) {
-				ownerTaxplots.add(plot);
-				ownerQuadTree.insert(plot,plot.xcoord,plot.ycoord);
-				ownerSymbolTable.put(plot.address, plot);
+				this.ownerTaxplots.add(plot);
+				this.ownerQuadTree.insert(plot,plot.xcoord,plot.ycoord);
+				this.ownerSymbolTable.put(plot.address, plot);
 			}
 		}
 	}
