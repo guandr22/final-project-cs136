@@ -249,8 +249,6 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 					else {
 						LeafNode leafLR = (LeafNode) parentPointer.lowerRight;
 						siblingLeavesArr.add(leafLR);
-						System.out.println(leafLR.parent.parent);
-						System.out.println(parentPointer.parent);
 					}
 				}
 				numLeaves--;
@@ -263,14 +261,21 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 				// THIS CURRENTLY DOES NOT FUNCTION -- THE SIZE FUNCTION WORKS PROPERLY, BUT LEAF.PARENT = (LEAFNODE) SIBLINGLEAVESARR JUST 
 				// DOES NOT DO WHAT WE WANT IT TO DO.
 				if (siblingLeavesArr.size() == 1){
-					parentPointer = new EmptyNode(parentPointer.parent);
-					// (LeafNode) siblingLeavesArr.get(0);
-					// leaf.parent = (LeafNode) siblingLeavesArr.get(0);
+					LeafNode lastLeaf = siblingLeavesArr.get(0);
 					InternalNode grandparentPointer = (InternalNode) parentPointer.parent;
 
-					// Note to future self: we're going to go through the grandparentPointer's children until we can replace it
-					// with what might end up being a new copy of the leafNode in siblingLeavesArr, just with a different 
-
+					if (grandparentPointer.upperLeft.equals(parentPointer)){
+						grandparentPointer.upperLeft = new LeafNode(grandparentPointer, lastLeaf.data, lastLeaf.xcoord, lastLeaf.ycoord);
+					}
+					else if (grandparentPointer.upperRight.equals(parentPointer)){
+						grandparentPointer.upperRight = new LeafNode(grandparentPointer, lastLeaf.data, lastLeaf.xcoord, lastLeaf.ycoord);
+					}
+					else if (grandparentPointer.lowerLeft.equals(parentPointer)){
+						grandparentPointer.lowerLeft = new LeafNode(grandparentPointer, lastLeaf.data, lastLeaf.xcoord, lastLeaf.ycoord);
+					}
+					else if (grandparentPointer.lowerRight.equals(parentPointer)){
+						grandparentPointer.lowerRight = new LeafNode(grandparentPointer, lastLeaf.data, lastLeaf.xcoord, lastLeaf.ycoord);
+					}
 				}
 			}
 		}
