@@ -254,7 +254,7 @@ public class PLUTO extends JFrame{
 		g.drawImage(bf,0,0,null);
 	}
 
-	// QUERIES
+	// FUNCTION OVERVIEW
 	/** We've broadly implemented two types of functions: functions for answering individual questions and functions for building
 	 * maps.
 	 * 
