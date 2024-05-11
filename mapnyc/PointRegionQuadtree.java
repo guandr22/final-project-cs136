@@ -203,6 +203,9 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 	}
 
 	// A helper method for remove() using in-order traversal (inspired by Wyatt's traversalHelper()).
+	// Apologies in advance for just how long this is. With our particular setup of inner classes and instance variables, as well as
+	// with the requirements of removal (making sure that an InternalNode with one LeafNode and three EmptyNodes becomes a LeafNode), 
+	// this just required a lot of iteration and a lot of repetition.
 	public void removeHelper(Node pointer, Item object){
 		if (pointer instanceof PointRegionQuadtree.LeafNode){
 			LeafNode leaf = (LeafNode) pointer;
@@ -258,8 +261,6 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 				// grandparent InternalNode's children to make the conversion. This is deeply frustrating product of implementing LeafNodes
 				// and InternalNodes as separate classes, but at this point, reversing that decision would more or less require scrapping all
 				// of our work.
-				// THIS CURRENTLY DOES NOT FUNCTION -- THE SIZE FUNCTION WORKS PROPERLY, BUT LEAF.PARENT = (LEAFNODE) SIBLINGLEAVESARR JUST 
-				// DOES NOT DO WHAT WE WANT IT TO DO.
 				if (siblingLeavesArr.size() == 1){
 					LeafNode lastLeaf = siblingLeavesArr.get(0);
 					InternalNode grandparentPointer = (InternalNode) parentPointer.parent;
