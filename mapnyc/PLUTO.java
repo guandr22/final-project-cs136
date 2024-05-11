@@ -38,6 +38,15 @@ public class PLUTO extends JFrame{
 	public BufferedImage nycJPG;
 	public int mouseX, mouseY;
 
+	//  Instance variables for mapping through all Taxplots of a given land use category or owned by a given person/corporation.
+	public ArrayList<TaxPlot> landuseTaxplots;
+	public Hashtable<String, TaxPlot> landuseSymbolTable;
+	public PointRegionQuadtree<TaxPlot> landuseQuadTree;
+
+	public ArrayList<TaxPlot> ownerTaxplots;
+	public Hashtable<String, TaxPlot> ownerSymbolTable;
+	public PointRegionQuadtree<TaxPlot> ownerQuadTree;
+
 	//Wyatt used Liberty Island and U Thant Island as set points to calculate these constants.
 	/** 
 	 * Wyatt used screenshots to figure out their pixel position, and their x and y coordinates (based on 
@@ -272,17 +281,71 @@ public class PLUTO extends JFrame{
 		return symbolTable.get(address).ownerName;
 	}
 
-	// What’s the average [age/height/square footage/land value/total value] of a building within X miles of me? 
-	// POSSIBLY ANDREW'S
-	public double average(){
-		return 0.0;
+	// What’s the average [height/age/land value/total value/square footage] of a building within X miles of me? 
+	public double average(double xcoord, double ycoord, double mileRadius, int choice){
+		// The options, in order: 
+		// 1. numFloors, 
+		// 2. age (based on yearBuilt - the only int), 
+		// 3. assessedLandValue, 
+		// 4. assessedTotalValue, 
+		// 5. totalBuildingArea.
+
+		double coordRadius = mileRadius*COORDS_TO_MILES_RATIO;
+		ArrayList<TaxPlot> nearbyBuildingsArr = quadtree.withinDistance(xcoord, ycoord, coordRadius);
+		double sum = 0;
+
+		// numFloors
+		if (choice == 1){
+			for (TaxPlot plot : nearbyBuildingsArr){
+				sum += plot.numFloors;
+			}
+			return sum / nearbyBuildingsArr.size();
+		}
+
+		// age
+		if (choice == 2){
+			for (TaxPlot plot : nearbyBuildingsArr){
+				sum += (double) (2024-plot.yearBuilt);
+			}
+			return sum / nearbyBuildingsArr.size();
+		}
+
+		// assessedLandValue
+		if (choice == 3){
+			for (TaxPlot plot : nearbyBuildingsArr){
+				sum += plot.assessedLandValue;
+			}
+			return sum / nearbyBuildingsArr.size();
+		}
+
+		// assessedTotalValue
+		if (choice == 4){
+			for (TaxPlot plot : nearbyBuildingsArr){
+				sum += plot.assessedTotalValue;
+			}
+			return sum / nearbyBuildingsArr.size();
+		}
+
+		// totalBuildingArea
+		if (choice == 5){
+			for (TaxPlot plot : nearbyBuildingsArr){
+				sum += plot.totalBuildingArea;
+			}
+			return sum / nearbyBuildingsArr.size();
+		}
+
+		return 0.0; // if the input is out-of-bounds
 	}
 
 	// "What is the nearest [park/vacant lot/multi-family walk-up building]?""
+	// Based on the landuse instance variable, so there are 11 valid inputs between 1 and 11 (inclusive).
+	// See the top of TaxPlot.java for what each integer corresponds to.
 	// Returns the lot's address and its distance from our point.
 	public String nearest(double xcoord, double ycoord, int landUseValue){
-		// Possibility of type being part of a user input from the prompt --> would require some kind of hashtable later on to map each 
-		// user input (I'm guessing we're going to have users look for parking spaces, not land use value 10) to a land use value.
+		if (landUseValue > 1 || landUseValue < 11){ // Out of bounds
+			return Integer.toString(landUseValue) + " is out of bounds. Please input an integer between 0 and 30, inclusive.";
+		}
+
 		TaxPlot plotResult = nearestHelper(xcoord, ycoord, landUseValue, 3);
 		double dist = distanceHelper(xcoord, ycoord, plotResult.xcoord, plotResult.ycoord);
 
@@ -357,15 +420,41 @@ public class PLUTO extends JFrame{
 
 
 	// **2: MAP-RELATED FUNCTIONS.**
+	// FOR FUTURE (TO WYATT): I don't really know how the map works, but I'm trying to provide some tools to make mapping out 
+	// just TaxPlots of a given type or with a certain owner name something we can just copy-paste.
 
-	/*What is the nearest building owned by a person or corporation (same thing, really)
-	whose name includes the characters [for example, "Gates" or "Apple" or "City of New York"]?*/
-	public String ownerOfNearest(double xcoord, double ycoord, String owner){
-		// Type will be provided by Type
-		return "";
+	// Fills out a secondary ArrayList, Quadtree, and SymbolTable to help map and answer queries involving just TaxPlots of
+	// a chosen land usage category.
+	// Integers from 1-11 (inclusive) are valid inputs.
+	// Highly memory and time-intensive for large datasets like ours. Only one land usage option can stored at a time.
+	public void mapLandUse(int landUseOption){
+		if (landUseOption > 1 || landUseOption < 11){ // Out of bounds
+			return;
+		}
+		for (TaxPlot plot : this.taxplots) {
+			if (plot.landuse == landUseOption) {
+				landuseTaxplots.add(plot);
+        		landuseQuadTree.insert(plot,plot.xcoord,plot.ycoord);
+        		landuseSymbolTable.put(plot.address, plot);
+			}
+		}
+	}
+
+
+	// Fills out a tertiary group of data structures to help map and answer queries involving just TaxPlots owned by
+	// a person, governmental body, or corporation whose name includes a given string of character [for example, "Gates"
+	// or "Apple" or "City of New York"].
+	// Also highly memory and time-intensive for large datasets. Can only store one land usage option at a time.
+	public void mapOwner(String ownerInput){
+		for (TaxPlot plot : this.taxplots) {
+			if (plot.ownerName.contains(ownerInput)) {
+				ownerTaxplots.add(plot);
+				ownerQuadTree.insert(plot,plot.xcoord,plot.ycoord);
+				ownerSymbolTable.put(plot.address, plot);
+			}
+		}
 	}
 	 
-
 
 	// DELETE LATER - I think Wyatt answered this perfectly with the demo.
 	// // What’s the [oldest/tallest/most spacious/highest land value/highest total value] building within X miles of me?

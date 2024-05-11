@@ -196,6 +196,8 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 	public boolean remove(Item object){
 		ArrayList<Item> objectsInTreeArr = traversal();
 		if (!objectsInTreeArr.contains(object)) return false; 
+		// Could make the code above much faster with a bit of extra work and time, but to be honest, I've spent so much time just making 
+		// this work, and the implementation doesn't even use remove() anyway, so it's just not worth it.
 		else{
 			removeHelper(root, object);
 			return true;
