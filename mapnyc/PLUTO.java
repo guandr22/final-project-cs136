@@ -245,21 +245,41 @@ public class PLUTO extends JFrame{
 		g.drawImage(bf,0,0,null);
 	}
 
-	/** Because closestObject() was designed with abstract Objects in mind rather than specific TaxPlots, implementing nearest() 
-	 * presented a problem: how do we look for a specific type of TaxPlot when PointRegionQuadtree's closestObject() method
-	 * can't process specific TaxPlot data?
-	 * We had two options: 
-	 * 1. Use a function which creates an empty quadtree, iterates through this.quadtree and adds to the empty quadtree only those 
-	 * elements which matched the desired type of TaxPlot, then calls closestObject() on the new quadtree.
-	 * 2. Adapt the underlying code behind closestObject() to work with TaxPlot's landuse instance variable.
+	// QUERIES
+	/** We've broadly implemented two types of functions: functions for answering individual questions and functions for building
+	 * maps.
 	 * 
-	 * The first choice would have been significantly easier to implement, but we decided on the second choice because the first choice was
-	 * so memory and space-intensive.
-	 */
-	
+	 * The functions for answering individual questions, which we have reduced to the queries "What is the nearest [park/vacant lot/multi-family 
+	 * walk-up building]?", "What’s the average [age/height/square footage/land value/total value] of a building within X miles of me?", and 
+	 * "Who owns the building at this address?" are better optimized for space, only focusing on a subsection or 
+	 * individual point of a Quadtree at a given time.
+	 * We decided to drop the functions designed to answer the question "What’s the [oldest/tallest/most spacious/highest land value/highest
+	 * total value] building within X miles of me?" and "What is the nearest building owned by a person or corporation whose name includes 
+	 * these characters [for example, "Gates" or "Apple" or "City of New York"]?" because the answers to these questions would be significantly
+	 * when visually mapped out. Once Wyatt did the work of making all these cool maps, it seemed like a waste of time to try to provide poor
+	 * answers to questions better answered visually and with less finnicky implementation.
+	 * 
+	 * Our second group of functions, those related to maps, involve initial setup functions which can tax a system (requiring iteration through
+	 * all of the points on the map), but afterwards are easier to implement with the functions provided in PointRegionQuadtree.java and 
+	 * provide more useful answers with Wyatt's wonderful maps.
+	 * - Andrew
+	 */  
 
-	// What is the nearest [park/vacant lot/multi-family walk-up building]?
-	// Should return the lot's address and its distance from our point.
+	// **1: INDIVIDUAL QUERY FUNCTIONS.**
+
+	// Who owns the building at this address?
+	public String getOwner(String address){
+		return symbolTable.get(address).ownerName;
+	}
+
+	// What’s the average [age/height/square footage/land value/total value] of a building within X miles of me? 
+	// POSSIBLY ANDREW'S
+	public double average(){
+		return 0.0;
+	}
+
+	// "What is the nearest [park/vacant lot/multi-family walk-up building]?""
+	// Returns the lot's address and its distance from our point.
 	public String nearest(double xcoord, double ycoord, int landUseValue){
 		// Possibility of type being part of a user input from the prompt --> would require some kind of hashtable later on to map each 
 		// user input (I'm guessing we're going to have users look for parking spaces, not land use value 10) to a land use value.
@@ -286,12 +306,13 @@ public class PLUTO extends JFrame{
 		return Math.hypot(xMiles, yMiles);
 	}
 
-	// Andrew's, based on Wyatt's implementation of closestObject.
+	// Andrew's, based on Wyatt's implementation of closestObject. 
+	// This was particularly finnicky because closestObject (and all functions in PointRegionQuadtree) were designed for generics, 
+	// not around the particular TaxPlot objects used in Pluto, and we needed to adapt closestObject() to looking for an instance 
+	// variable of a TaxPlot.
 	public TaxPlot nearestHelper(double xcoord, double ycoord, int landUseValue, int exhaustiveness){
-
 		// Internal Classes of PointRegionQuadtree like Node and LeafNode need some additional help in order to function properly
 		// in PLUTO.java.
-
 		if (!quadtree.root.box.inBox(xcoord,ycoord)){
 			System.out.println("coords not in window");
 			return null;
@@ -334,6 +355,9 @@ public class PLUTO extends JFrame{
 		return (TaxPlot) closestNode.data;
 	}
 
+
+	// **2: MAP-RELATED FUNCTIONS.**
+
 	/*What is the nearest building owned by a person or corporation (same thing, really)
 	whose name includes the characters [for example, "Gates" or "Apple" or "City of New York"]?*/
 	public String ownerOfNearest(double xcoord, double ycoord, String owner){
@@ -343,17 +367,11 @@ public class PLUTO extends JFrame{
 	 
 
 
-	// Who owns the building at this address?
-	public String getOwner(String address){
-		return symbolTable.get(address).ownerName;
-	}
-
-	// What’s the [oldest/tallest/most spacious/highest land value/highest total value] building within X miles of me?
-	public TaxPlot most(double maxDistance){
-		return null;
-	}
-
-	// What’s the average [age/height/square footage/land value/total value] of a building within X miles of me? 
+	// DELETE LATER - I think Wyatt answered this perfectly with the demo.
+	// // What’s the [oldest/tallest/most spacious/highest land value/highest total value] building within X miles of me?
+	// public TaxPlot most(double maxDistance){
+	// 	return null;
+	// }
 
 	private class MapMouseListener implements MouseListener, MouseMotionListener {
 		public void mousePressed(MouseEvent event) {
