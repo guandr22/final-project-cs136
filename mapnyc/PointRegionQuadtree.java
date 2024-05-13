@@ -279,6 +279,8 @@ public class PointRegionQuadtree<Item> implements Quadtree<Item>{
 					else if (grandparentPointer.lowerRight.equals(parentPointer)){
 						grandparentPointer.lowerRight = new LeafNode(grandparentPointer, lastLeaf.data, lastLeaf.xcoord, lastLeaf.ycoord);
 					}
+
+					numInternalNodes--;
 				}
 			}
 		}
