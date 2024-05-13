@@ -2,6 +2,7 @@
 By Wyatt Smith and Andrew Gu, in Prof. Katie Keith's CSCI 136 class.
 
 ## Overview
+We used a Point-Region Quadtree to organize data from the New York City's [PLUTO dataset]([url](https://www.nyc.gov/site/planning/data-maps/open-data/dwn-pluto-mappluto.page)).
 
 ## Quadtree ADT
 
@@ -11,7 +12,7 @@ By Wyatt Smith and Andrew Gu, in Prof. Katie Keith's CSCI 136 class.
 
 ## PLUTO.java
 
-## How to Operate the Map
+## The Map
 
 ## Sources
 
