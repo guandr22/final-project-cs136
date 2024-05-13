@@ -1,2 +1,17 @@
-# final-project-cs136
-The final project for Andrew Gu and Wyatt Smith in Prof. Katie Keith's CS 136 class.
+# Final Project: Mapping New York City
+By Wyatt Smith and Andrew Gu, in Prof. Katie Keith's CSCI 136 class.
+
+## Overview
+
+## Quadtree ADT
+
+## Point-Region Quadtrees and BoundingBox.java
+
+## The Dataset and TaxPlot.java
+
+## PLUTO.java
+
+## How to Operate the Map
+
+## Sources
+
