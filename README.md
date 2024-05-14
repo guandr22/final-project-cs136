@@ -62,5 +62,5 @@ Type the integer corresponding to the mode you want. Because the csv file has >8
 ## Sources
 https://www.cs.cmu.edu/~ckingsf/bioinfo-lectures/quadtrees.pdf
 https://people.scs.carleton.ca/~maheshwa/courses/5703COMP/16Fall/quadtrees-paper.pdf
-https://people.scs.carleton.ca/~maheshwa/courses/5703COMP/16Fall/quadtrees-paper.pdf
 https://jimkang.com/quadtreevis/
+https://en.wikipedia.org/wiki/Quadtree
