@@ -16,14 +16,20 @@ import java.awt.event.MouseMotionListener;
 
 public class PLUTO extends JFrame{
 	public int MODE=-1;
-	public final int WITHIN_DISTANCE_MODE =1;
-	public final int NEAREST_MODE =2;
+	public final int NEAREST_MODE = 2;
+	public final int AVERAGE_MODE = 1;
 	public final int MAP_MODE = 3;
+	public final int OWNER_MODE = 4;
 
 	public int MAP_TYPE = 5;
 	public final int MONEY =5;
 	public final int AGE =6;
 	public final int FLOORS =7;
+
+	public int LANDUSE_TYPE =1;
+	public int AVERAGE_TYPE =1;
+
+	public String ownerSearch = "";
 
 	public final static int NUM_TAXPLOTS=1000000;
 
@@ -96,7 +102,10 @@ public class PLUTO extends JFrame{
 		taxplots = new ArrayList<TaxPlot>();
 		symbolTable = new Hashtable<>();
 		quadtree = new PointRegionQuadtree<TaxPlot>(region);
-
+		//
+		ownerTaxplots = new ArrayList<TaxPlot>();
+		ownerSymbolTable = new Hashtable<String, TaxPlot>();
+		ownerQuadTree = new PointRegionQuadtree<TaxPlot>(region);
 		//scan data into the data structures
 		File file = new File(filename); 
 		try{
@@ -127,8 +136,6 @@ public class PLUTO extends JFrame{
 		MapMouseListener listener = new MapMouseListener();
 		addMouseListener(listener);
 		addMouseMotionListener(listener);
-
-
 	}
 	public void setRegion(){
 		double minX = BOTTOMLEFT_XCOORD;
@@ -165,52 +172,7 @@ public class PLUTO extends JFrame{
 			g2.drawImage(nycJPG,0,0,null);
 		}
 		catch (Exception e){}
-
-
-		if (MODE == WITHIN_DISTANCE_MODE){
-			ArrayList<TaxPlot> taxplotsWithinDistance = quadtree.withinDistance(getXCoordFromPixel(mouseX),
-																				getYCoordFromPixel(mouseY),
-																				WITHIN_DISTANCE_RADIUS);
-			// //Put a pixel of red for each taxplot
-			for (TaxPlot taxplot: taxplots){
-				if (taxplotsWithinDistance.contains(taxplot)){
-					g2.setPaint(Color.RED);
-				}
-				else{
-					g2.setPaint(Color.BLUE);
-				}
-				g2.fillRect(getXPixel(taxplot), getYPixel(taxplot), 1,1);
-			}
-			//draw a green oval for the YOU ARE HERE
-			g2.setPaint(Color.GREEN);
-			g2.fillOval(mouseX,mouseY,10,10);
-		}
-		else if (MODE == NEAREST_MODE){
-
-			// PointRegionQuadtree<TaxPlot> tempQuadtree = new PointRegionQuadtree<TaxPlot>(region);
-			// for (TaxPlot taxplot: taxplots){
-			// 	tempQuadtree.insert(taxplot,taxplot.xcoord,taxplot.ycoord);
-			// }
-
-			// TaxPlot curTaxplot = null;
-			// while (true){
-			// 	curTaxplot = tempQuadtree.closestObject(getXCoordFromPixel(mouseX),getYCoordFromPixel(mouseY),2);
-			// 	if (curTaxplot.landuse == TaxPlot.VACANT_LOT){
-			// 		break;
-			// 	}
-			// 	else{
-			// 		tempQuadtree.remove(curTaxplot);
-			// 	}
-			// }
-			//draw a green oval for the YOU ARE HERE
-			g2.setPaint(Color.GREEN);
-			g2.fillOval(mouseX,mouseY,10,10);
-			TaxPlot nearestTaxplot = quadtree.closestObject(getXCoordFromPixel(mouseX),getYCoordFromPixel(mouseY),2);
-			g2.setPaint(Color.RED);
-			g2.fillOval(getXPixel(nearestTaxplot),getYPixel(nearestTaxplot),10,10);
-		}
-
-		else if (MODE == MAP_MODE){
+		if (MODE == MAP_MODE){
 			Color mapColor = new Color(0,0,0);
 			for (TaxPlot taxplot: taxplots){
 				if (MAP_TYPE == MONEY){
@@ -248,6 +210,39 @@ public class PLUTO extends JFrame{
 				}
 				g2.setPaint(mapColor);
 				g2.fillRect(getXPixel(taxplot), getYPixel(taxplot), 1,1);
+			}
+		}
+		else if (MODE == NEAREST_MODE || MODE == AVERAGE_MODE){
+			double mouseXCoord = getXCoordFromPixel(mouseX);
+			double mouseYCoord = getYCoordFromPixel(mouseY);
+			if (MODE == NEAREST_MODE){
+				System.out.println(nearest(mouseXCoord,mouseYCoord,LANDUSE_TYPE));
+				try{
+					TaxPlot nearest = nearestHelper(mouseXCoord, mouseYCoord, LANDUSE_TYPE, 3);
+					g2.setPaint(Color.RED);
+					g2.fillOval(getXPixel(nearest),getYPixel(nearest),10,10);
+				}
+				catch(Exception e){
+				}
+			}
+			else if (MODE == AVERAGE_MODE){
+				System.out.println(average(mouseXCoord,mouseYCoord,WITHIN_DISTANCE_RADIUS,AVERAGE_TYPE));
+				double coordRadius = WITHIN_DISTANCE_RADIUS*COORDS_TO_MILES_RATIO;
+				ArrayList<TaxPlot> nearbyBuildingsArr = quadtree.withinDistance(mouseXCoord, mouseYCoord, coordRadius);
+				g2.setPaint(Color.RED);
+				for (TaxPlot taxplot: nearbyBuildingsArr){
+					g2.fillRect(getXPixel(taxplot), getYPixel(taxplot), 1,1);
+				}
+			}
+			g2.setPaint(Color.GREEN);
+			g2.fillOval(mouseX,mouseY,10,10);
+		}
+		else if (MODE == OWNER_MODE){
+			mapOwner(ownerSearch);
+			g2.setPaint(Color.RED);
+			for (TaxPlot taxplot: ownerTaxplots){
+				g2.fillRect(getXPixel(taxplot), getYPixel(taxplot), 4,4);
+				System.out.println(taxplot);
 			}
 		}
 
@@ -342,20 +337,25 @@ public class PLUTO extends JFrame{
 	// See the top of TaxPlot.java for what each integer corresponds to.
 	// Returns the lot's address and its distance from our point.
 	public String nearest(double xcoord, double ycoord, int landUseValue){
-		if (landUseValue > 1 || landUseValue < 11){ // Out of bounds
-			return Integer.toString(landUseValue) + " is out of bounds. Please input an integer between 0 and 30, inclusive.";
+		if (landUseValue < 1 || landUseValue > 11){ // Out of bounds
+			return Integer.toString(landUseValue) + " is out of bounds. Please input an integer between 0 and 11, inclusive.";
 		}
+		try {
+			TaxPlot plotResult = nearestHelper(xcoord, ycoord, landUseValue, 3);
 
-		TaxPlot plotResult = nearestHelper(xcoord, ycoord, landUseValue, 3);
-		double dist = distanceHelper(xcoord, ycoord, plotResult.xcoord, plotResult.ycoord);
+			double dist = distanceHelper(xcoord, ycoord, plotResult.xcoord, plotResult.ycoord);
 
-		// For distances less than 0.1 miles, convert to feet.
-		if (dist < 0.1) {
-			int distFeet = (int) dist*5280;
-			return plotResult.address + " | " + Integer.toString(distFeet) + " feet away.";
+			// For distances less than 0.1 miles, convert to feet.
+			if (dist < 0.1) {
+				int distFeet = (int) dist*5280;
+				return plotResult.address + " | " + Integer.toString(distFeet) + " feet away.";
+			}
+
+			return plotResult.address + " | " + Double.toString(dist) + " miles away.";
 		}
-
-		return plotResult.address + " | " + Double.toString(dist) + " miles away.";
+		catch (Exception e){
+			return "No such property within the radius";
+		}
 	}
 
 	// Calculates the Euclidean distance in miles between two points based on their xcoords and ycoords.
@@ -409,15 +409,16 @@ public class PLUTO extends JFrame{
 		PointRegionQuadtree<TaxPlot>.LeafNode closestNode = null;
 		for (PointRegionQuadtree<TaxPlot>.LeafNode leaf: leafNodes){
 			double dist = Math.hypot(xcoord-leaf.xcoord, ycoord-leaf.ycoord);
-			if (dist < minDistance){
-				closestNode = leaf;
-				minDistance = dist;
+			if (leaf.data instanceof TaxPlot){
+				TaxPlot candidatePlot = (TaxPlot) leaf.data;
+				if (dist < minDistance && candidatePlot.landuse == landUseValue){
+					closestNode = leaf;
+					minDistance = dist;
+				}
 			}
 		}
-
 		return (TaxPlot) closestNode.data;
 	}
-
 
 	// **2: MAP-RELATED FUNCTIONS.**
 	// FOR FUTURE (TO WYATT): I don't really know how the map works, but I'm trying to provide some tools to make mapping out 
@@ -439,7 +440,6 @@ public class PLUTO extends JFrame{
 			}
 		}
 	}
-
 
 	// Fills out a tertiary group of data structures to help map and answer queries involving just TaxPlots owned by
 	// a person, governmental body, or corporation whose name includes a given string of character [for example, "Gates"
@@ -489,16 +489,14 @@ public class PLUTO extends JFrame{
 		Scanner scanner = new Scanner(System.in);
 		while (true){
 			System.out.println("MapNYC: select mode");
-			System.out.println("1: Within Distance");
-			System.out.println("2: Nearest");
+			System.out.println("1: Average [X] Within Distance [Y]");
+			System.out.println("2: Nearest Property of Type [X] Within Distance [Y]");
 			System.out.println("3: Generate Map");
+			System.out.println("4: Find Buildings Owned By [X]");
+
 			int modeSelection = Integer.valueOf(scanner.nextLine());
 			map.MODE = Integer.valueOf(modeSelection);
-			if (map.MODE == map.WITHIN_DISTANCE_MODE){
-				System.out.println("Set radius:");
-				int withinDistanceRadius = Integer.valueOf(scanner.nextLine());
-				map.WITHIN_DISTANCE_RADIUS = withinDistanceRadius;
-			}
+
 			if (map.MODE == map.MAP_MODE){
 				System.out.println("Map generator: select mode");
 				System.out.println("1: Assessed Total Value");
@@ -507,9 +505,43 @@ public class PLUTO extends JFrame{
 				int mapTypeSelection = Integer.valueOf(scanner.nextLine());
 				map.MAP_TYPE = mapTypeSelection +map.MONEY -1;
 			}
+			else if (map.MODE == map.NEAREST_MODE){
+				System.out.println("Set radius in miles:");
+				double withinDistanceRadius = Double.valueOf(scanner.nextLine());
+				map.WITHIN_DISTANCE_RADIUS = withinDistanceRadius;
+				System.out.println("Select landuse: select option");
+				System.out.println("1: ONE_TWO_FAMILY_WALK_UP");
+				System.out.println("2: MULTI_FAMILY_WALK_UP");
+				System.out.println("3: MULTI_FAMILY_ELEVATOR");
+				System.out.println("4: MIXED_RESIDENTIAL_COMMERCIAL");
+				System.out.println("5: COMMERCIAL_OFFICE");
+				System.out.println("6: INDUSTRIAL_MANUFACTURING");
+				System.out.println("7: TRANSPORTATION_UTILITY");
+				System.out.println("8: PUBLIC_FACILITIES_INSTITUTIONS");
+				System.out.println("9: OPEN_SPACE_OUTDOOR_RECREATION");
+				System.out.println("10: PARKING_FACILITIES");
+				System.out.println("11: VACANT_LOT");
+				map.LANDUSE_TYPE = Integer.valueOf(scanner.nextLine());
+				System.out.println("Click map to set location:");
+			}
+			else if (map.MODE == map.AVERAGE_MODE){
+				System.out.println("Set radius in miles:");
+				double withinDistanceRadius = Double.valueOf(scanner.nextLine());
+				map.WITHIN_DISTANCE_RADIUS = withinDistanceRadius;
+				System.out.println("Select metric to average:");
+				System.out.println("1: Number of Floors");
+				System.out.println("2: Age");
+				System.out.println("3: Assessed Land Value (USD)");
+				System.out.println("4: Assessed Total Value (USD)");
+				System.out.println("5: Total Building Area");
+				map.AVERAGE_TYPE = Integer.valueOf(scanner.nextLine());
+				System.out.println("Click map to set location:");
+			}
+			else if (map.MODE == map.OWNER_MODE){
+				System.out.println("Type owner name (LASTNAME, FIRSTNAME):");
+				map.ownerSearch = scanner.nextLine();
+			}
 		}
-
-		//System.out
 	}
 }
 
