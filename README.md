@@ -57,7 +57,7 @@ MapNYC: select mode
 3: Generate Map
 4: Find Buildings Owned By [X]
 ```
-Type the integer corresponding to the mode you want.
+Type the integer corresponding to the mode you want. Because the csv file has >800k entries, it will take around ten seconds to boot up. Navigate the menus as directed and in accordance with your passion. IMPORTANT: Click on the map to set your location and get feedback from the program!
 
 ## Sources
 https://www.cs.cmu.edu/~ckingsf/bioinfo-lectures/quadtrees.pdf
