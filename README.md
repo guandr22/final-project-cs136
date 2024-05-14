@@ -49,7 +49,15 @@ javac -d bin mapnyc/*.java
 java -cp bin mapnyc.PLUTO
 ```
 
-You will be prompted with four features to choose from.
+You will be prompted with four modes to choose from in the command line:
+```
+MapNYC: select mode
+1: Average [X] Within Distance [Y]
+2: Nearest Property of Type [X] Within Distance [Y]
+3: Generate Map
+4: Find Buildings Owned By [X]
+```
+Type the integer corresponding to the mode you want.
 
 ## Sources
 https://www.cs.cmu.edu/~ckingsf/bioinfo-lectures/quadtrees.pdf
