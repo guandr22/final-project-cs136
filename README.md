@@ -26,17 +26,33 @@ This organization highlights one of the benefits of Quadtrees compared to, for e
 Our particular implementation, however, which involved treating Internal Nodes, Leaf Nodes, and Empty Nodes as subclasses of a broader Node class, did not gel very well with Java's class declaration requirements; many of our approximately 1,000 lines of code are class checks and declarations. We overcame the problems that resulted with the power of trial-and-error and liberal copying and pasting, but in retrospect, this may have been much simpler if we stored Internal Nodes, Leaf Nodes, and Empty Nodes all as Nodes with certain instance variables being null (for example, giving Internal Nodes exampleNode.data = null).
 
 ## The Dataset and TaxPlot.java
-The dataset itself, pluto_24_v1_1, was a CSV file produced by the NYC Department of City Planning, with 858,578 entries, each containing a taxplot (a small area of land usually corresponding to a building) and 91 variables per entry, including x and y coordinates alongside latitude and longitude. The dictionary for making sense of all of those variables is available [here](https://s-media.nyc.gov/agencies/dcp/assets/files/pdf/data-tools/bytes/pluto_datadictionary.pdf). The csv is too large to put in GitHub Classroom directly, so it's available in a Google Drive at this link or on the NYC Department of City Planning website [here](https://www.nyc.gov/site/planning/data-maps/open-data/dwn-pluto-mappluto.page).
+The dataset itself, pluto_24_v1_1, was a CSV file produced by the NYC Department of City Planning, with 858,578 entries, each containing a taxplot (a small area of land usually corresponding to a building) and 91 variables per entry, including x and y coordinates alongside latitude and longitude. The dictionary for making sense of all of those variables is available [here](https://s-media.nyc.gov/agencies/dcp/assets/files/pdf/data-tools/bytes/pluto_datadictionary.pdf). The csv is too large to put in GitHub Classroom directly, so it's available on the NYC Department of City Planning website [here](https://www.nyc.gov/site/planning/data-maps/open-data/dwn-pluto-mappluto.page).
 We did not clean the csv directly. Instead, Wyatt reduced the number of variables to 11 and processed each line of the csv in TaxPlot.java through some very creative finagling given the idiosyncracies of some of the data's formatting, but he ended up needing to throw out around 20,000 entries as corrupted (usually because of some unfortunate commas).
-
-## REMINDER: PUT THE LINK TO THE CSV IN GOOGLE DRIVE
 
 ## PLUTO.java
 PLUTO.java makes all of our work legible to users. We used Hashtables, ArrayLists, PR Quadtrees, and the graphics packages from Lab 2 to store and map the dataset.
 
-## The Map
+In order to run PLUTO.java, download and move the file "pluto_24v1_1.csv" into the mapnyc directory. 
 
-## Future Avenues
+Before you compile and run this program, make sure you are in the same directory this `README.md` lives in on your terminal.
+
+First, make a bin directory where Java will store and read the .class files.
+
+```
+mkdir bin
+```
+Then run the following command to compile your programs 
+
+```
+javac -d bin mapnyc/*.java
+```
+java -cp bin mapnyc.PLUTO
+```
+
+You will be prompted with four features to choose from.
 
 ## Sources
-
+https://www.cs.cmu.edu/~ckingsf/bioinfo-lectures/quadtrees.pdf
+https://people.scs.carleton.ca/~maheshwa/courses/5703COMP/16Fall/quadtrees-paper.pdf
+https://people.scs.carleton.ca/~maheshwa/courses/5703COMP/16Fall/quadtrees-paper.pdf
+https://jimkang.com/quadtreevis/
