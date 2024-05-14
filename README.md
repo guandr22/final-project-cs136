@@ -41,11 +41,11 @@ First, make a bin directory where Java will store and read the .class files.
 ```
 mkdir bin
 ```
-Then run the following command to compile your programs 
+Then run the following commands to compile and execute your programs 
 
 ```
 javac -d bin mapnyc/*.java
-```
+
 java -cp bin mapnyc.PLUTO
 ```
 
